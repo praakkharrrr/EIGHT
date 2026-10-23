@@ -62,111 +62,68 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* -------------------------------------------------------------
-   TOP FLOATING FROSTED GLASS CAPSULE NAV (Interactive)
+   KITE AI FLOATING FROSTED GLASS CAPSULE NAV
+   Matches uploaded design template exactly:
+   [ EIGHT     Overview   Evaluation Lab   Agent Arena   Verification   Analytics     • OFFLINE SIMULATOR ]
    ------------------------------------------------------------- */
-.st-key-glass_capsule_navbar_container,
-[data-testid="stVerticalBlock"]:has(> div > .st-key-glass_capsule_navbar_container),
-div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-glass_capsule_navbar_container) {
+.glass-nav-capsule {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 32px !important;
     background: rgba(255, 255, 255, 0.75) !important;
     backdrop-filter: blur(28px) !important;
     -webkit-backdrop-filter: blur(28px) !important;
     border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
     border-radius: 9999px !important;
-    padding: 6px 20px !important;
     box-shadow: 
         0 16px 36px rgba(0, 0, 0, 0.04),
         inset 0 1px 2px rgba(255, 255, 255, 1) !important;
-    margin: 6px auto 20px auto !important;
-    max-width: 1120px !important;
-}
-
-/* Style st.pills inside the top floating navbar */
-[data-testid="stPills"] {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 4px !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}
-
-[data-testid="stPills"] > div {
-    display: flex !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    background: transparent !important;
-}
-
-[data-testid="stPills"] button {
-    background: transparent !important;
-    color: #475569 !important;
-    border: none !important;
-    border-radius: 9999px !important;
-    padding: 7px 15px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    transition: all 0.15s ease !important;
-    box-shadow: none !important;
-    cursor: pointer !important;
-    white-space: nowrap !important;
-}
-
-[data-testid="stPills"] button:hover {
-    color: #0F172A !important;
-    background: rgba(255, 255, 255, 0.75) !important;
-}
-
-[data-testid="stPills"] button[aria-checked="true"],
-[data-testid="stPills"] button[aria-selected="true"],
-[data-testid="stPills"] button[data-selected="true"] {
-    background: #0F172A !important;
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25) !important;
-}
-
-[data-testid="stPills"] button[aria-checked="true"] *,
-[data-testid="stPills"] button[aria-selected="true"] *,
-[data-testid="stPills"] button[data-selected="true"] * {
-    color: #FFFFFF !important;
+    margin: 8px auto 26px auto !important;
+    max-width: 980px !important;
 }
 
 .glass-nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.glass-nav-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: #0F172A;
-    letter-spacing: -0.02em;
+    font-size: 16.5px !important;
+    font-weight: 800 !important;
+    color: #0F172A !important;
+    letter-spacing: -0.03em !important;
+    text-decoration: none !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
 }
 
 .glass-nav-links {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-    font-size: 13.5px;
-    font-weight: 600;
-    color: #475569;
+    display: flex !important;
+    align-items: center !important;
+    gap: 28px !important;
 }
 
-.glass-nav-btn {
-    background: #0F172A;
-    color: #FFFFFF !important;
-    font-weight: 700;
-    font-size: 12.5px;
-    padding: 8px 18px;
-    border-radius: 9999px;
-    text-decoration: none;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.glass-nav-link {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease, font-weight 0.15s ease !important;
+    padding: 4px 6px !important;
+    cursor: pointer !important;
+}
+
+.glass-nav-link:hover {
+    color: #0F172A !important;
+    text-decoration: none !important;
+}
+
+.glass-nav-link.active {
+    color: #0F172A !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+}
+
+.glass-nav-status {
+    display: flex !important;
+    align-items: center !important;
 }
 
 /* -------------------------------------------------------------
