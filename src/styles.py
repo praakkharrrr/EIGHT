@@ -1,13 +1,13 @@
 """
-Styles, branding, and dynamic Dark / Light theme engine for EIGHT — AI Crash-Test Lab.
-Ensures 100% legibility, contrast, and component styling across both modes.
+Masterclass UI Styles & Branding for EIGHT — AI Crash-Test Lab.
+Crafted for flawless contrast, crisp typography, and zero icon/ligature breakage.
 """
 
-BRAND_SVG = """<svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+BRAND_SVG = """<svg width="42" height="42" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="eightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#38BDF8" />
-      <stop offset="50%" stop-color="#6366F1" />
+      <stop offset="45%" stop-color="#818CF8" />
       <stop offset="100%" stop-color="#0284C7" />
     </linearGradient>
     <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
@@ -24,224 +24,178 @@ BRAND_SVG = """<svg width="44" height="44" viewBox="0 0 100 100" fill="none" xml
   <circle cx="68" cy="60" r="3.5" fill="#818CF8" />
 </svg>"""
 
-def get_theme_css(theme: str = "dark") -> str:
-    """Returns dynamic CSS tailored for either dark or light mode with strict contrast."""
-    is_dark = (theme.lower() == "dark")
-    
-    if is_dark:
-        bg_color = "#0B0F19"
-        bg_gradient = "radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.05) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%)"
-        card_bg = "#111827"
-        border_color = "rgba(255, 255, 255, 0.08)"
-        border_hover = "rgba(56, 189, 248, 0.3)"
-        text_primary = "#F8FAFC"
-        text_secondary = "#94A3B8"
-        text_muted = "#64748B"
-        sidebar_bg = "#080D1A"
-        header_bg = "linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%)"
-        kpi_bg = "linear-gradient(180deg, #131B2E 0%, #0F172A 100%)"
-        code_bg = "#0D121F"
-        tab_bg = "#0E1424"
-        tab_inactive_text = "#94A3B8"
-        tab_active_text = "#FFFFFF"
-        stat_pill_bg = "rgba(255, 255, 255, 0.04)"
-        callout_bg = "rgba(30, 41, 59, 0.6)"
-        input_bg = "#111827"
-        input_border = "rgba(255, 255, 255, 0.12)"
-        input_text = "#F8FAFC"
-    else:
-        bg_color = "#F8FAFC"
-        bg_gradient = "radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.7) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.7) 0px, transparent 50%)"
-        card_bg = "#FFFFFF"
-        border_color = "#E2E8F0"
-        border_hover = "#0284C7"
-        text_primary = "#0F172A"
-        text_secondary = "#334155"
-        text_muted = "#64748B"
-        sidebar_bg = "#F1F5F9"
-        header_bg = "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)"
-        kpi_bg = "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)"
-        code_bg = "#F8FAFC"
-        tab_bg = "#E2E8F0"
-        tab_inactive_text = "#1E293B"
-        tab_active_text = "#FFFFFF"
-        stat_pill_bg = "#E2E8F0"
-        callout_bg = "#F1F5F9"
-        input_bg = "#FFFFFF"
-        input_border = "#CBD5E1"
-        input_text = "#0F172A"
+MASTERCLASS_CSS = """<style>
+/* Import Inter for ultra-clean developer tool typography */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-    return f"""<style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* Apply font safely without breaking Material Symbols / icon ligatures */
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-/* Main App Wrapper */
-.stApp {{
-    background-color: {bg_color} !important;
-    background-image: {bg_gradient} !important;
-    color: {text_primary} !important;
-    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-}}
+/* Fix Material Icon ligatures so text like 'keyboard_double' or 'visibili' NEVER appears */
+.material-symbols-rounded, 
+.material-icons, 
+[data-testid="stIconMaterial"], 
+[data-testid="stIconMaterial"] * {
+    font-family: 'Material Symbols Rounded', 'Material Icons' !important;
+    text-transform: none !important;
+}
 
-/* Global Text */
-h1, h2, h3, h4, h5, h6 {{
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    color: {text_primary} !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.02em !important;
-}}
+/* Background Atmosphere */
+.stApp {
+    background-color: #0B0F19 !important;
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 50%),
+        radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.06) 0px, transparent 50%) !important;
+    color: #F8FAFC !important;
+}
 
-p, span, label, div {{
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-}}
-
-/* Top Hero Header */
-.eight-header {{
+/* Top App Header Banner */
+.eight-header {
     display: flex;
     align-items: center;
     gap: 18px;
-    padding: 20px 24px;
-    background: {header_bg};
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid {border_color};
+    padding: 22px 26px;
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
-    margin-bottom: 22px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, {'0.3' if is_dark else '0.05'});
-}}
+    margin-bottom: 24px;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
 
-.eight-title-group {{
+.eight-title-group {
     flex-grow: 1;
-}}
+}
 
-.eight-title-row {{
+.eight-title-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 10px;
-}}
+    gap: 12px;
+}
 
-.eight-main-title {{
-    font-size: 24px;
+.eight-main-title {
+    font-size: 26px;
     font-weight: 800;
-    color: {text_primary} !important;
+    color: #FFFFFF !important;
     margin: 0;
-    letter-spacing: -0.02em;
-}}
+    letter-spacing: -0.025em;
+}
 
-.eight-tagline {{
-    font-size: 13px;
-    color: {text_secondary} !important;
-    margin-top: 3px;
-    font-weight: 500;
-}}
+.eight-tagline {
+    font-size: 13.5px;
+    color: #94A3B8 !important;
+    margin-top: 4px;
+    font-weight: 400;
+}
 
-.stats-strip {{
+.stats-strip {
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid {border_color};
-}}
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
 
-.stat-pill {{
+.stat-pill {
     font-size: 11.5px;
-    color: {text_secondary} !important;
-    background: {stat_pill_bg};
-    border: 1px solid {border_color};
-    padding: 3px 10px;
+    color: #CBD5E1 !important;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 4px 10px;
     border-radius: 6px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
     font-weight: 500;
-}}
+}
 
-/* Content Cards */
-.eight-card {{
-    background: {card_bg};
-    border: 1px solid {border_color};
+/* Premium Card Component */
+.eight-card {
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
-    padding: 18px 22px;
+    padding: 20px 24px;
     margin-bottom: 16px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, {'0.25' if is_dark else '0.04'});
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     transition: border-color 0.15s ease, transform 0.15s ease;
-    color: {text_primary} !important;
-}}
+}
 
-.eight-card:hover {{
-    border-color: {border_hover};
-}}
+.eight-card:hover {
+    border-color: rgba(56, 189, 248, 0.3);
+}
 
-.eight-card-title {{
-    font-size: 14.5px;
+.eight-card-title {
+    font-size: 15px;
     font-weight: 700;
-    color: {'#38BDF8' if is_dark else '#0284C7'} !important;
+    color: #38BDF8 !important;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
-}}
+}
 
 /* Status Badges */
-.badge-real-api {{
-    background: rgba(16, 185, 129, {'0.15' if is_dark else '0.12'});
-    color: {'#34D399' if is_dark else '#059669'} !important;
+.badge-real-api {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34D399 !important;
     border: 1px solid rgba(16, 185, 129, 0.3);
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-}}
+    gap: 8px;
+}
 
-.badge-mock {{
-    background: rgba(245, 158, 11, {'0.15' if is_dark else '0.12'});
-    color: {'#FBBF24' if is_dark else '#D97706'} !important;
+.badge-mock {
+    background: rgba(245, 158, 11, 0.15);
+    color: #FBBF24 !important;
     border: 1px solid rgba(245, 158, 11, 0.3);
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-}}
+    gap: 8px;
+}
 
-.pulse-dot-green {{
+.pulse-dot-green {
     width: 7px;
     height: 7px;
     background-color: #10B981;
     border-radius: 50%;
     display: inline-block;
     box-shadow: 0 0 6px #10B981;
-}}
+}
 
-.pulse-dot-amber {{
+.pulse-dot-amber {
     width: 7px;
     height: 7px;
     background-color: #F59E0B;
     border-radius: 50%;
     display: inline-block;
     box-shadow: 0 0 6px #F59E0B;
-}}
+}
 
-/* KPI Metric Cards */
-.kpi-card {{
-    background: {kpi_bg};
-    border: 1px solid {border_color};
+/* Metric KPI Card */
+.kpi-card {
+    background: linear-gradient(180deg, #131B2E 0%, #0F172A 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 18px 20px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, {'0.25' if is_dark else '0.04'});
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     transition: transform 0.15s ease, border-color 0.15s ease;
-}}
+}
 
-.kpi-card::before {{
+.kpi-card::before {
     content: "";
     position: absolute;
     top: 0;
@@ -249,49 +203,49 @@ p, span, label, div {{
     right: 0;
     height: 3px;
     background: linear-gradient(90deg, #38BDF8, #818CF8);
-}}
+}
 
-.kpi-card:hover {{
+.kpi-card:hover {
     transform: translateY(-2px);
-    border-color: {border_hover};
-}}
+    border-color: rgba(56, 189, 248, 0.35);
+}
 
-.kpi-value {{
+.kpi-value {
     font-size: 30px;
     font-weight: 800;
-    color: {text_primary} !important;
+    color: #F8FAFC !important;
     line-height: 1.1;
     letter-spacing: -0.02em;
-}}
+}
 
-.kpi-label {{
+.kpi-label {
     font-size: 11.5px;
     font-weight: 700;
-    color: {text_secondary} !important;
+    color: #94A3B8 !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: 6px;
-}}
+}
 
-.kpi-subtext {{
+.kpi-subtext {
     font-size: 11.5px;
-    color: {text_muted} !important;
+    color: #64748B !important;
     margin-top: 4px;
-}}
+}
 
 /* Stepper Stage Component */
-.pipeline-step {{
-    background: {card_bg};
-    border: 1px solid {border_color};
+.pipeline-step {
+    background: #111827;
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 10px;
     padding: 14px 16px;
     display: flex;
     gap: 12px;
     align-items: flex-start;
     margin-bottom: 10px;
-}}
+}
 
-.step-num {{
+.step-num {
     background: linear-gradient(135deg, #0284C7, #38BDF8);
     color: #FFFFFF !important;
     font-weight: 800;
@@ -303,147 +257,115 @@ p, span, label, div {{
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-}}
+}
 
-.step-body-title {{
+.step-body-title {
     font-size: 13.5px;
     font-weight: 700;
-    color: {text_primary} !important;
-}}
+    color: #F8FAFC !important;
+}
 
-.step-body-desc {{
+.step-body-desc {
     font-size: 12px;
-    color: {text_secondary} !important;
+    color: #94A3B8 !important;
     line-height: 1.4;
     margin-top: 2px;
-}}
+}
 
 /* Agent Avatar Badges */
-.agent-header-badge {{
+.agent-header-badge {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
     border-radius: 10px;
     margin-bottom: 12px;
-}}
+}
 
-.badge-baseline {{
-    background: rgba(147, 51, 234, {'0.12' if is_dark else '0.08'});
-    border: 1px solid rgba(147, 51, 234, 0.25);
-    color: {'#C084FC' if is_dark else '#7E22CE'} !important;
-}}
+.badge-baseline {
+    background: rgba(147, 51, 234, 0.12);
+    border: 1px solid rgba(147, 51, 234, 0.3);
+    color: #C084FC !important;
+}
 
-.badge-agent-a {{
-    background: rgba(14, 165, 233, {'0.12' if is_dark else '0.08'});
-    border: 1px solid rgba(14, 165, 233, 0.25);
-    color: {'#38BDF8' if is_dark else '#0284C7'} !important;
-}}
+.badge-agent-a {
+    background: rgba(14, 165, 233, 0.12);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    color: #38BDF8 !important;
+}
 
-.badge-agent-b {{
-    background: rgba(16, 185, 129, {'0.12' if is_dark else '0.08'});
-    border: 1px solid rgba(16, 185, 129, 0.25);
-    color: {'#34D399' if is_dark else '#059669'} !important;
-}}
+.badge-agent-b {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #34D399 !important;
+}
 
 /* Callouts */
-.human-callout {{
-    background: {callout_bg};
+.human-callout {
+    background: rgba(30, 41, 59, 0.7);
     border-left: 3px solid #38BDF8;
     border-radius: 0 8px 8px 0;
     padding: 12px 16px;
     font-size: 13px;
-    color: {text_secondary} !important;
+    color: #CBD5E1 !important;
     margin: 14px 0;
     line-height: 1.5;
-}}
+}
+
+/* Sidebar styling */
+[data-testid="stSidebar"] {
+    background-color: #080D1A !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
 
 /* -------------------------------------------------------------
-   STREAMLIT SIDEBAR CONTRAST & FORM CONTROLS
+   STREAMLIT TABS: GUARANTEED HIGH CONTRAST & LEGIBILITY
    ------------------------------------------------------------- */
-[data-testid="stSidebar"] {{
-    background-color: {sidebar_bg} !important;
-    border-right: 1px solid {border_color} !important;
-}}
-
-[data-testid="stSidebar"] h1,
-[data-testid="stSidebar"] h2,
-[data-testid="stSidebar"] h3,
-[data-testid="stSidebar"] h4,
-[data-testid="stSidebar"] h5,
-[data-testid="stSidebar"] h6,
-[data-testid="stSidebar"] label,
-[data-testid="stSidebar"] span,
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] div {{
-    color: {text_primary} !important;
-}}
-
-[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
-[data-testid="stSidebar"] small {{
-    color: {text_secondary} !important;
-    opacity: 0.9 !important;
-}}
-
-/* Inputs, Text Inputs, and Selectboxes in Sidebar and Main */
-.stTextInput input,
-[data-testid="stSidebar"] input {{
-    background-color: {input_bg} !important;
-    color: {input_text} !important;
-    border: 1px solid {input_border} !important;
-    border-radius: 8px !important;
-}}
-
-.stSelectbox [data-baseweb="select"],
-.stSelectbox [data-baseweb="select"] div,
-[data-testid="stSidebar"] [data-baseweb="select"],
-[data-testid="stSidebar"] [data-baseweb="select"] div {{
-    background-color: {input_bg} !important;
-    color: {input_text} !important;
-    border-color: {input_border} !important;
-}}
-
-/* Radio Buttons and Toggle Text */
-[data-testid="stSidebar"] [data-testid="stRadio"] label,
-[data-testid="stSidebar"] [data-testid="stToggle"] label {{
-    color: {text_primary} !important;
-    font-weight: 600 !important;
-}}
-
-/* -------------------------------------------------------------
-   TAB BAR CONTRAST
-   ------------------------------------------------------------- */
-.stTabs [data-baseweb="tab-list"] {{
+.stTabs [data-baseweb="tab-list"] {
     gap: 6px;
-    background: {tab_bg};
-    padding: 5px;
+    background: #0E1424 !important;
+    padding: 6px;
     border-radius: 10px;
-    border: 1px solid {border_color};
-    margin-bottom: 18px;
-}}
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 22px;
+}
 
-.stTabs [data-baseweb="tab"] {{
-    color: {tab_inactive_text} !important;
-    font-weight: 700 !important;
+/* Inactive tabs: crisp, high contrast readable slate */
+.stTabs [data-baseweb="tab"] {
+    color: #CBD5E1 !important;
+    font-weight: 600 !important;
     font-size: 13px !important;
     border-radius: 6px !important;
     padding: 8px 16px !important;
     border: none !important;
     opacity: 1 !important;
-}}
+    background: transparent !important;
+    transition: all 0.15s ease !important;
+}
 
-.stTabs [data-baseweb="tab"]:hover {{
-    color: {'#38BDF8' if is_dark else '#0284C7'} !important;
-}}
+.stTabs [data-baseweb="tab"]:hover {
+    color: #38BDF8 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
 
-.stTabs [aria-selected="true"] {{
-    color: {tab_active_text} !important;
+/* Active tab: glowing electric blue gradient */
+.stTabs [aria-selected="true"] {
+    color: #FFFFFF !important;
     background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%) !important;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35) !important;
-}}
+    box-shadow: 0 2px 10px rgba(2, 132, 199, 0.4) !important;
+}
 
-/* Buttons */
-.stButton > button {{
+/* Ensure tab text elements inside buttons inherit colors */
+.stTabs [data-baseweb="tab"] p, 
+.stTabs [data-baseweb="tab"] span, 
+.stTabs [data-baseweb="tab"] div {
+    color: inherit !important;
+    font-size: inherit !important;
+    font-weight: inherit !important;
+}
+
+/* Primary Button Styling */
+.stButton > button {
     background: linear-gradient(135deg, #0284C7 0%, #2563EB 100%) !important;
     color: #FFFFFF !important;
     font-weight: 600 !important;
@@ -452,18 +374,28 @@ p, span, label, div {{
     border-radius: 8px !important;
     padding: 8px 18px !important;
     box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3) !important;
-}}
+    transition: all 0.15s ease !important;
+}
 
-.stButton > button:hover {{
+.stButton > button:hover {
     background: linear-gradient(135deg, #0369A1 0%, #1D4ED8 100%) !important;
-    box-shadow: 0 4px 14px rgba(2, 132, 199, 0.45) !important;
+    box-shadow: 0 4px 16px rgba(2, 132, 199, 0.5) !important;
     transform: translateY(-1px) !important;
-}}
+}
 
-/* Code block container tweaks */
-.stCodeBlock {{
-    border: 1px solid {border_color} !important;
+/* Inputs & Form Controls */
+.stTextInput input, 
+.stSelectbox [data-baseweb="select"] {
+    background-color: #111827 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 8px !important;
-    background-color: {code_bg} !important;
-}}
+    color: #F8FAFC !important;
+}
+
+/* Code block container */
+.stCodeBlock {
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 8px !important;
+    background-color: #0D121F !important;
+}
 </style>"""
