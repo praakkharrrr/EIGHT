@@ -65,27 +65,74 @@ def create_task_comparison_chart(task_results: List[TaskEvaluationResult]) -> al
     return chart
 
 def create_collaboration_donut(helped: int, no_effect: int, hurt: int) -> alt.Chart:
-    """Donut chart illustrating the empirical impact of multi-agent collaboration."""
+    """Donut chart illustrating the empirical impact of multi-agent collaboration with center badge and zero clipping."""
+    total = helped + no_effect + hurt
+    pct_helped = round((helped / total * 100), 1) if total > 0 else 0
+
     source = pd.DataFrame([
-        {"Outcome": "Helped (Multi passed, Baseline failed)", "Count": helped, "Color": "#10B981"},
-        {"Outcome": "No Effect (Equal pass/fail)", "Count": no_effect, "Color": "#94A3B8"},
-        {"Outcome": "Hurt (Baseline passed, Multi failed)", "Count": hurt, "Color": "#EF4444"},
+        {"Outcome": "Helped (Multi Won)", "Count": helped, "Color": "#10B981"},
+        {"Outcome": "No Effect (Neutral)", "Count": no_effect, "Color": "#94A3B8"},
+        {"Outcome": "Hurt (Baseline Won)", "Count": hurt, "Color": "#EF4444"},
     ])
 
     source = source[source["Count"] > 0]
     if source.empty:
         source = pd.DataFrame([{"Outcome": "No Data", "Count": 1, "Color": "#CBD5E1"}])
 
-    chart = alt.Chart(source).mark_arc(innerRadius=60, outerRadius=95, cornerRadius=4).encode(
+    donut = alt.Chart(source).mark_arc(
+        innerRadius=52,
+        outerRadius=78,
+        padAngle=0.04,
+        stroke="#FFFFFF",
+        strokeWidth=2
+    ).encode(
         theta=alt.Theta("Count:Q", stack=True),
-        color=alt.Color("Outcome:N", scale=alt.Scale(domain=source["Outcome"].tolist(), range=source["Color"].tolist()), legend=alt.Legend(orient="bottom", labelColor="#334155", title=None, labelLimit=250)),
+        color=alt.Color(
+            "Outcome:N",
+            scale=alt.Scale(
+                domain=source["Outcome"].tolist(),
+                range=source["Color"].tolist()
+            ),
+            legend=alt.Legend(
+                orient="bottom",
+                labelColor="#334155",
+                title=None,
+                labelLimit=300,
+                labelFontSize=12,
+                labelFont="Plus Jakarta Sans",
+                symbolType="circle",
+                direction="horizontal"
+            )
+        ),
         tooltip=[
             alt.Tooltip("Outcome:N", title="Outcome"),
             alt.Tooltip("Count:Q", title="Tasks Count")
         ]
-    ).properties(
-        height=240,
-        background="transparent"
+    )
+
+    # Clean Center KPI Badge
+    center_df = pd.DataFrame([{"val": f"{pct_helped:.0f}%", "label": "Helped"}])
+    
+    text_val = alt.Chart(center_df).mark_text(
+        fontSize=20,
+        fontWeight=800,
+        color="#0F172A",
+        font="Plus Jakarta Sans",
+        dy=-5
+    ).encode(text="val:N")
+
+    text_label = alt.Chart(center_df).mark_text(
+        fontSize=11,
+        fontWeight=600,
+        color="#64748B",
+        font="Plus Jakarta Sans",
+        dy=13
+    ).encode(text="label:N")
+
+    chart = (donut + text_val + text_label).properties(
+        height=260,
+        background="transparent",
+        padding={"top": 15, "bottom": 15, "left": 10, "right": 10}
     ).configure_view(
         strokeWidth=0
     )
