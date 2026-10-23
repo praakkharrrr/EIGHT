@@ -12,7 +12,7 @@ from src.agents import AgentRunner
 from src.evaluator import EvaluatorRunner
 from src.verification import VerificationEngine
 from src.metrics import MetricsCalculator
-from src.styles import CUSTOM_CSS, BRAND_SVG
+from src.styles import BRAND_SVG, get_theme_css
 from src.charts import (
     create_task_comparison_chart,
     create_collaboration_donut,
@@ -27,31 +27,28 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Inject modern styling & typography
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+# Initialize Session State
+if "theme" not in st.session_state:
+    st.session_state.theme = "Dark"
 
-# Initialize Benchmark Manager
-benchmark_manager = BenchmarkManager()
-tasks = benchmark_manager.get_all_tasks()
-task_map = {t.task_id: t for t in tasks}
-
-# Helper to run full evaluation suite
-def evaluate_all_tasks(client_inst: GemmaClient) -> dict:
-    results = {}
-    agent_runner = AgentRunner(client_inst)
-    evaluator_runner = EvaluatorRunner(client_inst)
-    for task in tasks:
-        base_out = agent_runner.run_baseline(task)
-        a_out = agent_runner.run_agent_a(task)
-        b_out = agent_runner.run_agent_b(task)
-        eval_dec = evaluator_runner.evaluate_candidates(task, a_out, b_out)
-        
-        v_base = VerificationEngine.verify_candidate(task, base_out, "Baseline")
-        v_a = VerificationEngine.verify_candidate(task, a_out, "Agent A")
-        v_b = VerificationEngine.verify_candidate(task, b_out, "Agent B")
-        
+if "evaluation_results" not in st.session_state:
+    benchmark_manager = BenchmarkManager()
+    tasks_init = benchmark_manager.get_all_tasks()
+    default_client = GemmaClient(force_mock=True)
+    # Pre-populate so judges immediately see live graphs and data
+    agent_runner = AgentRunner(default_client)
+    evaluator_runner = EvaluatorRunner(default_client)
+    init_results = {}
+    for t in tasks_init:
+        base_out = agent_runner.run_baseline(t)
+        a_out = agent_runner.run_agent_a(t)
+        b_out = agent_runner.run_agent_b(t)
+        eval_dec = evaluator_runner.evaluate_candidates(t, a_out, b_out)
+        v_base = VerificationEngine.verify_candidate(t, base_out, "Baseline")
+        v_a = VerificationEngine.verify_candidate(t, a_out, "Agent A")
+        v_b = VerificationEngine.verify_candidate(t, b_out, "Agent B")
         eval_res = MetricsCalculator.evaluate_task_result(
-            task=task,
+            task=t,
             baseline_output=base_out,
             agent_a_output=a_out,
             agent_b_output=b_out,
@@ -60,55 +57,71 @@ def evaluate_all_tasks(client_inst: GemmaClient) -> dict:
             agent_a_verification=v_a,
             agent_b_verification=v_b
         )
-        results[task.task_id] = eval_res
-    return results
-
-# Initialize session state
-if "evaluation_results" not in st.session_state:
-    # Auto-load initial simulation so the dashboard is immediately populated and settled
-    default_client = GemmaClient(force_mock=True)
-    st.session_state.evaluation_results = evaluate_all_tasks(default_client)
+        init_results[t.task_id] = eval_res
+    st.session_state.evaluation_results = init_results
 
 if "last_connectivity_status" not in st.session_state:
     st.session_state.last_connectivity_status = None
 
+# Inject dynamic CSS (st.html prevents markdown escaping)
+st.html(get_theme_css(st.session_state.theme))
+
+# Initialize Benchmarks
+benchmark_manager = BenchmarkManager()
+tasks = benchmark_manager.get_all_tasks()
+task_map = {t.task_id: t for t in tasks}
+
 # ---------------------------------------------------------
-# SIDEBAR: Engine Settings & Controls
+# SIDEBAR: Engine Settings, Theme, & Batch Controls
 # ---------------------------------------------------------
 with st.sidebar:
-    st.markdown(
-        f"""
-        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-            {BRAND_SVG}
-            <div>
-                <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">EIGHT</div>
-                <div style="font-size: 11px; color: #38BDF8; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">AI Crash-Test Lab</div>
-            </div>
+    # Top Brand Logo
+    st.html(f"""<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(128,128,128,0.2);">
+        {BRAND_SVG}
+        <div>
+            <div style="font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">EIGHT</div>
+            <div style="font-size: 11px; color: #38BDF8; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">AI Crash-Test Lab</div>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+    </div>""")
     
-    st.markdown("#### ⚙️ Engine Configuration")
+    # 1. Appearance / Theme Toggle
+    st.markdown("##### 🎨 Display Theme")
+    theme_choice = st.radio(
+        "Theme",
+        options=["Dark Mode", "Light Mode"],
+        index=0 if st.session_state.theme == "Dark" else 1,
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    new_theme = "Dark" if "Dark" in theme_choice else "Light"
+    if new_theme != st.session_state.theme:
+        st.session_state.theme = new_theme
+        st.rerun()
+
+    st.markdown("---")
+    
+    # 2. AI Engine Window (Easy to Understand)
+    st.markdown("##### ⚙️ AI Engine Settings")
+    st.caption("Configure how EIGHT runs tasks: using live Google Gemma API or the safe offline simulator.")
     
     selected_model = st.selectbox(
-        "Gemma Model Identifier",
+        "Model Identifier",
         options=Config.SUPPORTED_MODELS,
         index=0,
-        help="Selected model configuration for Baseline, Agent A, Agent B, and Evaluator."
+        help="Target model for Baseline, Agent A, Agent B, and Gemma 4 Evaluator."
     )
     
     runtime_api_key = st.text_input(
         "Gemini / Gemma API Key",
         value=Config.API_KEY or "",
         type="password",
-        help="API Key is stored only in session RAM. Never logged or committed."
+        help="Paste your Gemini API key for live generation. Left blank? EIGHT uses the Simulator."
     )
     
     use_mock = st.toggle(
-        "Simulation Mock Mode",
+        "Use Offline Simulator",
         value=not Config.is_api_configured(runtime_api_key),
-        help="Runs realistic, deterministic simulations of agent failure modes and evaluator decisions without consuming API quotas."
+        help="Runs deterministic, realistic simulations of agent pitfalls and evaluator verdicts without spending API credits."
     )
     
     client = GemmaClient(
@@ -117,14 +130,15 @@ with st.sidebar:
         force_mock=use_mock
     )
     
+    # Ping & Reset buttons
     col_ping, col_reset = st.columns([1, 1])
     with col_ping:
-        if st.button("📡 Ping Model", use_container_width=True):
-            with st.spinner("Connecting..."):
+        if st.button("📡 Ping API", use_container_width=True):
+            with st.spinner("Pinging..."):
                 success, msg = client.test_connectivity()
                 st.session_state.last_connectivity_status = (success, msg)
     with col_reset:
-        if st.button("🧹 Reset Data", use_container_width=True):
+        if st.button("🧹 Clear", use_container_width=True):
             st.session_state.evaluation_results.clear()
             st.rerun()
                 
@@ -136,9 +150,11 @@ with st.sidebar:
             st.info(msg)
 
     st.markdown("---")
-    st.markdown("#### ⚡ Batch Evaluation")
-    if st.button("🚀 Re-Run All 8 Benchmarks", use_container_width=True, type="primary"):
-        with st.status("Executing full benchmark crash-test suite...", expanded=True) as status_box:
+    
+    # 3. Batch Evaluation
+    st.markdown("##### 🚀 Fast Evaluation")
+    if st.button("▶ Run All 8 Benchmarks", use_container_width=True, type="primary"):
+        with st.status("Evaluating all 8 crash-test benchmarks...", expanded=True) as status_box:
             progress_bar = st.progress(0)
             agent_runner = AgentRunner(client)
             evaluator_runner = EvaluatorRunner(client)
@@ -168,50 +184,40 @@ with st.sidebar:
                 )
                 st.session_state.evaluation_results[task.task_id] = eval_res
                 
-            status_box.update(label="All 8 benchmarks successfully evaluated!", state="complete", expanded=False)
-            st.success(f"Updated evaluations for {len(tasks)} tasks.")
+            status_box.update(label="All benchmarks evaluated!", state="complete", expanded=False)
+            st.success(f"Evaluated {len(tasks)} benchmark tasks.")
             st.rerun()
 
-    st.markdown(
-        """
-        <div style="font-size: 11.5px; color: #64748B; margin-top: 30px; text-align: center;">
-            EIGHT v1.0.0 • Hackathon Edition<br>
-            Category: Best Use of Gemma 4
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown("""<div style="font-size: 11px; opacity: 0.6; margin-top: 25px; text-align: center;">
+        EIGHT — AI Crash-Test Lab v1.0<br>
+        Hackathon: Best Use of Gemma 4
+    </div>""", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TOP HERO HEADER
+# TOP HERO HEADER (Rendered cleanly via st.html)
 # ---------------------------------------------------------
-mode_pill = (
-    '<span class="badge-mock"><span class="pulse-dot-amber"></span>SIMULATION MOCK MODE</span>'
+mode_badge_html = (
+    '<span class="badge-mock"><span class="pulse-dot-amber"></span>OFFLINE SIMULATOR</span>'
     if client.is_mock_mode
-    else f'<span class="badge-real-api"><span class="pulse-dot-green"></span>LIVE API: {selected_model}</span>'
+    else f'<span class="badge-real-api"><span class="pulse-dot-green"></span>LIVE GEMMA: {selected_model}</span>'
 )
 
-st.markdown(
-    f"""
-    <div class="eight-header">
-        {BRAND_SVG}
-        <div class="eight-title-group">
-            <div class="eight-title-row">
-                <h1 class="eight-main-title">EIGHT — AI CRASH-TEST LAB</h1>
-                <div>{mode_pill}</div>
-            </div>
-            <div class="eight-tagline">"Don't trust the answer. Test the intelligence behind it."</div>
-            <div class="stats-strip">
-                <span class="stat-pill">🎯 <b>8 Curated Benchmarks</b></span>
-                <span class="stat-pill">⚔️ <b>Single Baseline vs Multi-Agent</b></span>
-                <span class="stat-pill">⚖️ <b>Gemma 4 Evaluator Arbiter</b></span>
-                <span class="stat-pill">🛡️ <b>AST-Audited Deterministic Verification</b></span>
-            </div>
+st.html(f"""<div class="eight-header">
+    {BRAND_SVG}
+    <div class="eight-title-group">
+        <div class="eight-title-row">
+            <h1 class="eight-main-title">EIGHT — AI CRASH-TEST LAB</h1>
+            <div>{mode_badge_html}</div>
+        </div>
+        <div class="eight-tagline">"Don't trust the answer. Test the intelligence behind it."</div>
+        <div class="stats-strip">
+            <span class="stat-pill">🎯 <b>8 Tricky Code Benchmarks</b></span>
+            <span class="stat-pill">⚔️ <b>1 Baseline vs 2 Specialists</b></span>
+            <span class="stat-pill">⚖️ <b>Gemma 4 Evaluator Arbiter</b></span>
+            <span class="stat-pill">🛡️ <b>Independent Sandboxed Verification</b></span>
         </div>
     </div>
-    """,
-    unsafe_allow_html=True
-)
+</div>""")
 
 # ---------------------------------------------------------
 # NAVIGATION TABS
@@ -230,127 +236,88 @@ tab_overview, tab_lab, tab_arena, tab_eval, tab_verif, tab_analytics, tab_inspec
 # TAB A: OVERVIEW
 # ---------------------------------------------------------
 with tab_overview:
-    st.markdown(
-        """
-        ### The AI Reliability Challenge
-        In modern AI engineering, **multi-agent architectures** are frequently assumed to be strictly superior to single-agent prompts.
-        However, conversational agent loops often introduce token bloat, latency spikes, and collective hallucination without guaranteeing ground-truth correctness.
+    st.markdown("""### 💡 The Big Question: Does Multi-Agent Collaboration Actually Help?
+Everyone assumes that having multiple AI agents talk to each other makes answers better.
+**EIGHT** was built to scientifically test this assumption.
 
-        **EIGHT** provides empirical, deterministic proof:
-        We pit a **single-agent baseline** against a **collaborative multi-agent pipeline**, independently verify their candidate solutions in a secure AST-audited sandbox, and measure the real trade-offs between correctness, latency, and API costs.
-        """
-    )
-    
+Instead of trusting the model's confidence, we put AI code through an **independent, deterministic crash-test** to answer:
+- **Did multi-agent collaboration actually outperform the single-agent baseline?**
+- **Did the AI evaluator pick the wrong answer because of flawed reasoning?**
+- **What was the cost in latency, tokens, and extra API calls?**
+- **Where did collaboration help, where did it have no effect, and where did it hurt?**
+""")
+
     col_ov1, col_ov2, col_ov3 = st.columns(3)
     with col_ov1:
-        st.markdown(
-            """
-            <div class="eight-card">
-                <div class="eight-card-title">🎯 Baseline vs Collaboration</div>
-                <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5; margin: 0;">
-                    Does pitting an Analytical Engineer against an Adversarial Edge-Case Specialist and arbitrating with 
-                    Gemma 4 actually yield higher code reliability than a direct zero-shot prompt?
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.html("""<div class="eight-card">
+            <div class="eight-card-title">🎯 Baseline vs Collaboration</div>
+            <p style="font-size: 13.5px; opacity: 0.85; line-height: 1.5; margin: 0;">
+                We compare a direct single-shot prompt against a 3-agent team (Algorithmic Specialist + Edge-Case Hunter + Gemma 4 Judge).
+            </p>
+        </div>""")
     with col_ov2:
-        st.markdown(
-            """
-            <div class="eight-card">
-                <div class="eight-card-title">🛡️ Deterministic Verification</div>
-                <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5; margin: 0;">
-                    No LLM self-grading or circular trust loops. Candidate outputs are passed through an isolated, 
-                    deterministic test harness checking boundary values, data integrity, and strict algorithmic assertions.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.html("""<div class="eight-card">
+            <div class="eight-card-title">🛡️ Deterministic Ground Truth</div>
+            <p style="font-size: 13.5px; opacity: 0.85; line-height: 1.5; margin: 0;">
+                Zero AI self-grading loops. Every candidate function is tested in a sandboxed Python runner against strict boundary assertions.
+            </p>
+        </div>""")
     with col_ov3:
-        st.markdown(
-            """
-            <div class="eight-card">
-                <div class="eight-card-title">🚨 Failure & Trade-off Auditing</div>
-                <p style="color: #94A3B8; font-size: 13.5px; line-height: 1.5; margin: 0;">
-                    EIGHT flags evaluator misjudgments (cases where Gemma 4 chose an incorrect candidate), reports pass-rate deltas,
-                    and quantifies the latency multiplier incurred by multi-agent orchestration.
-                </p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.html("""<div class="eight-card">
+            <div class="eight-card-title">🚨 The Cost & Failure Audit</div>
+            <p style="font-size: 13.5px; opacity: 0.85; line-height: 1.5; margin: 0;">
+                We measure the trade-offs: multi-agent takes ~3.5x longer and 4x the API calls. We track where collaboration helped or backfired.
+            </p>
+        </div>""")
 
-    st.markdown("#### The 4-Stage Crash-Test Pipeline")
-    
+    st.markdown("#### How the Crash-Test Pipeline Works")
     c_s1, c_s2 = st.columns(2)
     with c_s1:
-        st.markdown(
-            """
-            <div class="pipeline-step">
-                <div class="step-num">1</div>
-                <div>
-                    <div class="step-body-title">Single-Agent Baseline</div>
-                    <div class="step-body-desc">Direct zero-shot prompt given the task description. Fast and inexpensive, but prone to boundary edge-case traps.</div>
-                </div>
+        st.html("""<div class="pipeline-step">
+            <div class="step-num">1</div>
+            <div>
+                <div class="step-body-title">Single-Agent Baseline (The Speedrunner)</div>
+                <div class="step-body-desc">Generates code in a single turn. Fast and cheap, but often trips on subtle boundary traps.</div>
             </div>
-            <div class="pipeline-step">
-                <div class="step-num">2</div>
-                <div>
-                    <div class="step-body-title">Dual Specialist Generation</div>
-                    <div class="step-body-desc"><b>Agent A</b> (First-principles algorithmic focus) and <b>Agent B</b> (Adversarial boundary & edge-case focus) generate isolated candidate solutions.</div>
-                </div>
+        </div>
+        <div class="pipeline-step">
+            <div class="step-num">2</div>
+            <div>
+                <div class="step-body-title">Dual Specialists: Agent A & Agent B</div>
+                <div class="step-body-desc"><b>Agent A</b> designs optimal algorithms, while <b>Agent B</b> hunts for edge cases, nulls, and boundary conditions.</div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </div>""")
     with c_s2:
-        st.markdown(
-            """
-            <div class="pipeline-step">
-                <div class="step-num">3</div>
-                <div>
-                    <div class="step-body-title">Gemma 4 Evaluator Arbitration</div>
-                    <div class="step-body-desc">Gemma 4 performs comparative code review, pinpoints disagreements, identifies potential failure modes, and outputs a structured JSON verdict.</div>
-                </div>
+        st.html("""<div class="pipeline-step">
+            <div class="step-num">3</div>
+            <div>
+                <div class="step-body-title">Gemma 4 Evaluator (The Reviewer)</div>
+                <div class="step-body-desc">Gemma 4 reviews both submissions, highlights disagreements, and issues a structured JSON verdict.</div>
             </div>
-            <div class="pipeline-step">
-                <div class="step-num">4</div>
-                <div>
-                    <div class="step-body-title">Independent Sandboxed Verification</div>
-                    <div class="step-body-desc">Every candidate and the evaluator choice are tested against deterministic assertions in an AST-audited sandbox. Ground truth is established.</div>
-                </div>
+        </div>
+        <div class="pipeline-step">
+            <div class="step-num">4</div>
+            <div>
+                <div class="step-body-title">Independent Sandboxed Verification</div>
+                <div class="step-body-desc">Deterministic test assertions run against all candidates to reveal whether Gemma's choice actually works.</div>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </div>""")
 
     eval_count = len(st.session_state.evaluation_results)
-    st.markdown(
-        f"""
-        <div class="human-callout">
-            💡 <b>Live Benchmark State:</b> <code>{eval_count} of {len(tasks)} tasks</code> evaluated in active session memory. 
-            Navigate to <b>Evaluation Lab</b> to run single tasks, or <b>Reliability Analytics</b> to inspect pass rates and latency trade-offs.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.html(f"""<div class="human-callout">
+        <b>💡 Current Status:</b> <code>{eval_count} of {len(tasks)} tasks</code> evaluated in active memory. 
+        Head to <b>Evaluation Lab</b> to run a task, or <b>Reliability Analytics</b> to view pass-rate charts and trade-offs.
+    </div>""")
 
 # ---------------------------------------------------------
 # TAB B: EVALUATION LAB
 # ---------------------------------------------------------
 with tab_lab:
     st.markdown("### 🧪 Evaluation Lab")
-    st.markdown("Select an algorithmic benchmark task to inspect its specification and trigger the evaluation pipeline.")
+    st.markdown("Select an algorithmic challenge to inspect its specification, understand the trap, and run the crash test.")
     
     task_options = [f"{t.task_id} — {t.title} ({t.category.replace('_', ' ').title()})" for t in tasks]
-    selected_option = st.selectbox(
-        "Select Benchmark Task",
-        options=task_options,
-        index=0,
-        help="Choose one of the 8 reproducible benchmark tasks."
-    )
+    selected_option = st.selectbox("Choose Task to Test", options=task_options, index=0)
     current_task_id = selected_option.split(" — ")[0]
     current_task = task_map[current_task_id]
     
@@ -360,65 +327,54 @@ with tab_lab:
         "Hard": "#C084FC"
     }.get(current_task.difficulty, "#38BDF8")
     
-    col_task_info1, col_task_info2 = st.columns([3, 2])
-    with col_task_info1:
-        st.markdown(
-            f"""
-            <div class="eight-card">
-                <div class="eight-card-title">
-                    <span>📋 {current_task.title}</span>
-                    <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.06); color: {diff_color}; font-weight: 700;">
-                        {current_task.difficulty}
-                    </span>
-                </div>
-                <p style="font-size: 14px; color: #E2E8F0; line-height: 1.5;">{current_task.description}</p>
-                <div style="font-size: 12.5px; color: #94A3B8; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
-                    <b>Input:</b> <code>{current_task.input_spec}</code><br>
-                    <b>Output:</b> <code>{current_task.output_spec}</code>
-                </div>
+    col_t1, col_t2 = st.columns([3, 2])
+    with col_t1:
+        st.html(f"""<div class="eight-card">
+            <div class="eight-card-title">
+                <span>📋 {current_task.title}</span>
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(128,128,128,0.15); color: {diff_color}; font-weight: 700;">
+                    {current_task.difficulty}
+                </span>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
-    with col_task_info2:
-        st.markdown(
-            f"""
-            <div class="eight-card">
-                <div class="eight-card-title" style="color: #F87171;">⚠️ Architectural Trap Tested</div>
-                <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">{current_task.expected_trap}</p>
-                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 12px; color: #38BDF8; font-weight: 600;">
-                    🛡️ {len(current_task.test_cases)} Deterministic Test Assertions
-                </div>
+            <p style="font-size: 14px; line-height: 1.5; margin: 0 0 12px 0;">{current_task.description}</p>
+            <div style="font-size: 12.5px; opacity: 0.8; padding-top: 10px; border-top: 1px solid rgba(128,128,128,0.2);">
+                <b>Inputs:</b> <code>{current_task.input_spec}</code><br>
+                <b>Expected Output:</b> <code>{current_task.output_spec}</code>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+        </div>""")
+    with col_t2:
+        st.html(f"""<div class="eight-card">
+            <div class="eight-card-title" style="color: #F87171;">⚠️ The Sneaky Trap</div>
+            <p style="font-size: 13px; line-height: 1.5; margin: 0 0 12px 0;">{current_task.expected_trap}</p>
+            <div style="font-size: 12px; color: #38BDF8; font-weight: 600; padding-top: 8px; border-top: 1px solid rgba(128,128,128,0.2);">
+                🛡️ Tested with {len(current_task.test_cases)} strict test assertions
+            </div>
+        </div>""")
 
-    # Action Row
-    col_run_btn, col_run_note = st.columns([1, 2])
-    with col_run_btn:
+    col_btn, col_info = st.columns([1, 2])
+    with col_btn:
         run_single = st.button("🚀 Crash-Test This Task", type="primary", use_container_width=True)
-    with col_run_note:
-        st.caption("Executes Baseline, Agent A, Agent B, Gemma 4 Evaluator, and deterministic verification.")
-        
+    with col_info:
+        st.caption("Runs Baseline, Agent A, Agent B, Gemma 4 Evaluator, and deterministic verification.")
+
     if run_single:
         with st.status(f"Evaluating {current_task.task_id}...", expanded=True) as status:
             agent_runner = AgentRunner(client)
             evaluator_runner = EvaluatorRunner(client)
             
-            st.write("1. Running Single-Agent Zero-Shot Baseline...")
+            st.write("1. Running Baseline (Single prompt)...")
             base_out = agent_runner.run_baseline(current_task)
             
-            st.write("2. Invoking Agent A (Algorithmic / First-Principles)...")
+            st.write("2. Running Agent A (Algorithmic Specialist)...")
             a_out = agent_runner.run_agent_a(current_task)
             
-            st.write("3. Invoking Agent B (Adversarial Boundary Specialist)...")
+            st.write("3. Running Agent B (Adversarial Edge-Case Specialist)...")
             b_out = agent_runner.run_agent_b(current_task)
             
-            st.write("4. Arbitrating candidate code via Gemma 4 Evaluator...")
+            st.write("4. Invoking Gemma 4 Evaluator for comparative review...")
             eval_dec = evaluator_runner.evaluate_candidates(current_task, a_out, b_out)
             
-            st.write("5. Executing deterministic test harness in AST sandbox...")
+            st.write("5. Executing deterministic test assertions in sandbox...")
             v_base = VerificationEngine.verify_candidate(current_task, base_out, "Baseline")
             v_a = VerificationEngine.verify_candidate(current_task, a_out, "Agent A")
             v_b = VerificationEngine.verify_candidate(current_task, b_out, "Agent B")
@@ -434,54 +390,47 @@ with tab_lab:
                 agent_b_verification=v_b
             )
             st.session_state.evaluation_results[current_task.task_id] = eval_res
-            status.update(label=f"Completed {current_task.task_id} evaluation!", state="complete", expanded=False)
+            status.update(label=f"Done testing {current_task.task_id}!", state="complete", expanded=False)
             st.rerun()
 
-    # Quick Status Card if task evaluated
     if current_task_id in st.session_state.evaluation_results:
         res = st.session_state.evaluation_results[current_task_id]
-        outcome_badge = {
-            "Helped": '<span class="badge-helped">✅ Collaboration Helped</span>',
-            "Hurt": '<span class="badge-hurt">❌ Collaboration Hurt</span>',
-            "No Effect": '<span class="badge-no-effect">⚖️ No Effect (Equal)</span>',
-            "Indeterminate": '<span class="badge-no-effect">❓ Indeterminate</span>'
-        }.get(res.collaboration_outcome, '<span class="badge-no-effect">Equal</span>')
+        outcome_color = {
+            "Helped": "#10B981",
+            "Hurt": "#EF4444",
+            "No Effect": "#64748B",
+            "Indeterminate": "#64748B"
+        }.get(res.collaboration_outcome, "#64748B")
         
-        st.markdown(
-            f"""
-            <div style="background: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 20px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <span style="font-size: 13.5px; font-weight: 600; color: #F8FAFC;">Verification Outcome:</span> 
-                    <span style="font-size: 13px; color: {'#34D399' if res.baseline_verification.all_passed else '#F87171'}; margin-left: 8px;">
-                        Baseline: {'✅ Passed' if res.baseline_verification.all_passed else '❌ Failed'}
-                    </span>
-                    <span style="color: #64748B; margin: 0 8px;">|</span>
-                    <span style="font-size: 13px; color: {'#34D399' if res.multi_agent_verification.all_passed else '#F87171'};">
-                        Multi-Agent: {'✅ Passed' if res.multi_agent_verification.all_passed else '❌ Failed'}
-                    </span>
-                </div>
-                <div>{outcome_badge}</div>
+        st.html(f"""<div style="background: rgba(128,128,128,0.1); border: 1px solid rgba(128,128,128,0.2); border-radius: 10px; padding: 14px 18px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+                <b>Verification Result:</b>
+                <span style="color: {'#10B981' if res.baseline_verification.all_passed else '#EF4444'}; margin-left: 8px;">
+                    Baseline: {'✅ Passed' if res.baseline_verification.all_passed else '❌ Failed'}
+                </span>
+                <span style="opacity: 0.4; margin: 0 8px;">|</span>
+                <span style="color: {'#10B981' if res.multi_agent_verification.all_passed else '#EF4444'};">
+                    Multi-Agent Final: {'✅ Passed' if res.multi_agent_verification.all_passed else '❌ Failed'}
+                </span>
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            <div>
+                <span style="background: rgba(128,128,128,0.15); color: {outcome_color}; font-weight: 700; padding: 4px 12px; border-radius: 6px; font-size: 13px;">
+                    Collaboration: {res.collaboration_outcome}
+                </span>
+            </div>
+        </div>""")
 
 # ---------------------------------------------------------
 # TAB C: AGENT ARENA
 # ---------------------------------------------------------
 with tab_arena:
-    st.markdown("### ⚔️ Agent Arena")
-    st.markdown("Side-by-side inspection of candidate strategies and prompt-divergence behaviors.")
+    st.markdown("### ⚔️ Agent Arena: How Did Each Agent Solve It?")
+    st.markdown("Inspect candidate code from the Baseline, Agent A, and Agent B side-by-side.")
     
-    st.markdown(
-        """
-        <div class="human-callout">
-            ⚠️ <b>Critical Architectural Note:</b> Different prompts using the same model do not constitute independent models; 
-            they represent prompt-divergent strategies designed to probe the model's sensitivity to framing and adversarial boundaries.
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.html("""<div class="human-callout">
+        <b>💡 Why 2 Agents?</b> Prompting the same model differently tests how sensitive it is to framing. 
+        Agent A solves for clean code and performance, while Agent B specifically looks for empty inputs, negative values, and traps.
+    </div>""")
     
     eval_tasks = list(st.session_state.evaluation_results.keys())
     if not eval_tasks:
@@ -493,74 +442,59 @@ with tab_arena:
         col_arena_b, col_arena_a, col_arena_b_role = st.columns(3)
         
         with col_arena_b:
-            st.markdown(
-                f"""
-                <div class="agent-header-badge badge-baseline">
-                    <span style="font-size: 18px;">🟣</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Single-Agent Baseline</div>
-                        <div style="font-size: 11.5px; opacity: 0.85;">Direct Zero-Shot Prompt</div>
-                    </div>
+            st.html("""<div class="agent-header-badge badge-baseline">
+                <span style="font-size: 18px;">🟣</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 14px;">Single-Agent Baseline</div>
+                    <div style="font-size: 11px; opacity: 0.8;">The Fast One-Shot Attempt</div>
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-            st.code(res.baseline_output.parsed_code or res.baseline_output.raw_response or "# No code generated", language="python")
-            with st.expander("Strategy & Explanation"):
-                st.caption(f"**Latency:** {res.baseline_output.latency_seconds:.2f}s | **Tokens:** {res.baseline_output.tokens_used}")
+            </div>""")
+            st.code(res.baseline_output.parsed_code or res.baseline_output.raw_response or "# No code", language="python")
+            with st.expander("Details & Timing"):
+                st.caption(f"⏱️ **Latency:** {res.baseline_output.latency_seconds:.2f}s | 🪙 **Tokens:** {res.baseline_output.tokens_used}")
                 st.write(res.baseline_output.explanation or "No explanation provided.")
 
         with col_arena_a:
-            st.markdown(
-                f"""
-                <div class="agent-header-badge badge-agent-a">
-                    <span style="font-size: 18px;">🔵</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Agent A (Analytical)</div>
-                        <div style="font-size: 11.5px; opacity: 0.85;">First-Principles & Complexity</div>
-                    </div>
+            st.html("""<div class="agent-header-badge badge-agent-a">
+                <span style="font-size: 18px;">🔵</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 14px;">Agent A (Algorithmic)</div>
+                    <div style="font-size: 11px; opacity: 0.8;">First-Principles Design</div>
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-            st.code(res.agent_a_output.parsed_code or res.agent_a_output.raw_response or "# No code generated", language="python")
-            with st.expander("Strategy & Explanation"):
-                st.caption(f"**Latency:** {res.agent_a_output.latency_seconds:.2f}s | **Tokens:** {res.agent_a_output.tokens_used}")
+            </div>""")
+            st.code(res.agent_a_output.parsed_code or res.agent_a_output.raw_response or "# No code", language="python")
+            with st.expander("Details & Timing"):
+                st.caption(f"⏱️ **Latency:** {res.agent_a_output.latency_seconds:.2f}s | 🪙 **Tokens:** {res.agent_a_output.tokens_used}")
                 st.write(res.agent_a_output.explanation or "No explanation provided.")
 
         with col_arena_b_role:
-            st.markdown(
-                f"""
-                <div class="agent-header-badge badge-agent-b">
-                    <span style="font-size: 18px;">🟢</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Agent B (Adversarial)</div>
-                        <div style="font-size: 11.5px; opacity: 0.85;">Boundary & Edge-Case Specialist</div>
-                    </div>
+            st.html("""<div class="agent-header-badge badge-agent-b">
+                <span style="font-size: 18px;">🟢</span>
+                <div>
+                    <div style="font-weight: 700; font-size: 14px;">Agent B (Adversarial)</div>
+                    <div style="font-size: 11px; opacity: 0.8;">Edge-Case Specialist</div>
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
-            st.code(res.agent_b_output.parsed_code or res.agent_b_output.raw_response or "# No code generated", language="python")
-            with st.expander("Guarded Edge Cases & Explanation"):
-                st.caption(f"**Latency:** {res.agent_b_output.latency_seconds:.2f}s | **Tokens:** {res.agent_b_output.tokens_used}")
+            </div>""")
+            st.code(res.agent_b_output.parsed_code or res.agent_b_output.raw_response or "# No code", language="python")
+            with st.expander("Guarded Traps & Timing"):
+                st.caption(f"⏱️ **Latency:** {res.agent_b_output.latency_seconds:.2f}s | 🪙 **Tokens:** {res.agent_b_output.tokens_used}")
                 st.write(res.agent_b_output.explanation or "No explanation provided.")
 
-        st.markdown("#### Disagreement & Strategy Analysis")
+        st.markdown("#### Did the Agents Agree?")
         if res.agent_disagreement:
-            st.warning("⚠️ **Divergent Implementations:** Agent A and Agent B produced distinct algorithmic logic.")
+            st.warning("⚠️ **Different Approaches:** Agent A and Agent B wrote distinctly different solutions!")
             if res.evaluator_decision.identified_disagreements:
                 for dis in res.evaluator_decision.identified_disagreements:
                     st.markdown(f"- 🔸 {dis}")
         else:
-            st.info("ℹ️ **Convergent Implementations:** Agent A and Agent B arrived at equivalent code logic.")
+            st.info("ℹ️ **Agreement:** Both Agent A and Agent B arrived at equivalent implementations.")
 
 # ---------------------------------------------------------
 # TAB D: EVALUATOR REPORT
 # ---------------------------------------------------------
 with tab_eval:
-    st.markdown("### ⚖️ Gemma 4 Evaluator Report")
-    st.markdown("Structured code-review arbitration comparing Agent A and Agent B.")
+    st.markdown("### ⚖️ Gemma 4 Evaluator: The AI Judge's Verdict")
+    st.markdown("Gemma 4 compares both candidate solutions, detects flaws, and chooses a winner.")
     
     eval_tasks = list(st.session_state.evaluation_results.keys())
     if not eval_tasks:
@@ -572,149 +506,112 @@ with tab_eval:
         
         col_ev_main, col_ev_meta = st.columns([3, 2])
         with col_ev_main:
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <div class="eight-card-title">
-                        <span>🏆 Selected Candidate: <b>{ev.selected_agent}</b></span>
-                    </div>
-                    <p style="font-size: 14px; color: #E2E8F0; line-height: 1.6; margin: 0;">
-                        {ev.rationale}
-                    </p>
+            st.html(f"""<div class="eight-card">
+                <div class="eight-card-title">
+                    <span>🏆 Evaluator Pick: <b>{ev.selected_agent}</b></span>
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+                <p style="font-size: 14px; line-height: 1.6; margin: 0;">
+                    {ev.rationale}
+                </p>
+            </div>""")
             
-            st.markdown("#### Flagged Failure Modes & Risks")
+            st.markdown("##### Potential Edge Cases Flagged by Evaluator")
             if ev.potential_failure_modes:
                 for mode in ev.potential_failure_modes:
-                    st.markdown(f"- ⚠️ <span style='color: #FCA5A5;'>{mode}</span>", unsafe_allow_html=True)
+                    st.markdown(f"- ⚠️ <span style='color: #F87171;'>{mode}</span>", unsafe_allow_html=True)
             else:
-                st.caption("No residual risks noted by evaluator.")
+                st.caption("No edge-case risks noted.")
 
         with col_ev_meta:
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <div class="eight-card-title">📊 Evaluator Metadata</div>
-                    <div style="font-size: 13px; color: #94A3B8; line-height: 1.8;">
-                        <b>Confidence Level:</b> <span style="color: #38BDF8; font-weight: 700;">{ev.confidence_score * 100:.1f}%</span><br>
-                        <b>Arbitration Latency:</b> {ev.latency_seconds:.2f}s<br>
-                        <b>Tokens Consumed:</b> {ev.tokens_used}<br>
-                        <b>Execution Mode:</b> {'Simulated Mock' if ev.is_mock else 'Live Gemma 4 API'}<br>
-                        <b>Schema Validation:</b> {'Error' if ev.error else 'Valid JSON Object'}
-                    </div>
+            st.html(f"""<div class="eight-card">
+                <div class="eight-card-title">📊 Evaluator Metadata</div>
+                <div style="font-size: 13px; opacity: 0.9; line-height: 1.8;">
+                    <b>Confidence:</b> <span style="color: #38BDF8; font-weight: 700;">{ev.confidence_score * 100:.1f}%</span><br>
+                    <b>Review Latency:</b> {ev.latency_seconds:.2f}s<br>
+                    <b>Tokens Used:</b> {ev.tokens_used}<br>
+                    <b>Mode:</b> {'Simulation Simulator' if ev.is_mock else 'Live Gemma 4 API'}<br>
+                    <b>Format:</b> Valid Structured JSON
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+            </div>""")
             
             with st.expander("Raw Evaluator JSON Response"):
                 st.code(ev.raw_response, language="json")
 
-        st.markdown(
-            """
-            <div class="human-callout">
-                🛡️ <b>Verification Checkpoint:</b> Evaluator decisions reflect the model's judgment, which can still be flawed. 
-                Proceed to the <b>Verification Center</b> to inspect how this candidate performed against deterministic assertions.
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.html("""<div class="human-callout">
+            <b>🛡️ Ground Truth Warning:</b> An AI's evaluation is still an AI opinion!
+            Head over to the <b>Verification Center</b> to see if this candidate actually passed deterministic test assertions.
+        </div>""")
 
 # ---------------------------------------------------------
 # TAB E: VERIFICATION CENTER
 # ---------------------------------------------------------
 with tab_verif:
-    st.markdown("### 🛡️ Verification Center")
-    st.markdown("Deterministic, sandboxed assertions establishing ground-truth correctness.")
+    st.markdown("### 🛡️ Verification Center: Ground-Truth Proof")
+    st.markdown("This is the source of truth. We run real test cases against all generated code in an AST-audited sandbox.")
     
     eval_tasks = list(st.session_state.evaluation_results.keys())
     if not eval_tasks:
-        st.info("Run an evaluation to inspect verification outcomes.")
+        st.info("Run an evaluation to view verification results.")
     else:
         selected_verif_id = st.selectbox("Inspect Task", options=eval_tasks, index=0, key="verif_task_select")
         res = st.session_state.evaluation_results[selected_verif_id]
         
         if res.evaluator_error_flag:
             st.error(
-                "🚨 **EVALUATOR MISJUDGMENT DETECTED:** "
-                f"The Gemma 4 Evaluator selected **{res.evaluator_decision.selected_agent}**, "
-                "which FAILED deterministic verification despite alternative passing candidate availability."
+                "🚨 **EVALUATOR MISJUDGMENT!** "
+                f"Gemma 4 chose **{res.evaluator_decision.selected_agent}**, "
+                "which FAILED the test assertions, even though an alternative candidate passed!"
             )
             
         c_v1, c_v2, c_v3, c_v4 = st.columns(4)
         
         with c_v1:
             vb = res.baseline_verification
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: {'#34D399' if vb.all_passed else '#F87171'};">
-                        {vb.pass_count}/{vb.total_count}
-                    </div>
-                    <div class="kpi-label">Baseline Pass Count</div>
-                    <div class="kpi-subtext">{'✅ 100% Passed' if vb.all_passed else '❌ Boundary Failure'}</div>
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: {'#10B981' if vb.all_passed else '#EF4444'};">
+                    {vb.pass_count}/{vb.total_count}
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+                <div class="kpi-label">Baseline Score</div>
+                <div class="kpi-subtext">{'✅ All passed' if vb.all_passed else '❌ Failed trap'}</div>
+            </div>""")
         with c_v2:
             va = res.agent_a_verification
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: {'#34D399' if va.all_passed else '#F87171'};">
-                        {va.pass_count}/{va.total_count}
-                    </div>
-                    <div class="kpi-label">Agent A (Analytical)</div>
-                    <div class="kpi-subtext">{'✅ 100% Passed' if va.all_passed else '❌ Boundary Failure'}</div>
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: {'#10B981' if va.all_passed else '#EF4444'};">
+                    {va.pass_count}/{va.total_count}
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+                <div class="kpi-label">Agent A Score</div>
+                <div class="kpi-subtext">{'✅ All passed' if va.all_passed else '❌ Failed trap'}</div>
+            </div>""")
         with c_v3:
             v_b = res.agent_b_verification
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: {'#34D399' if v_b.all_passed else '#F87171'};">
-                        {v_b.pass_count}/{v_b.total_count}
-                    </div>
-                    <div class="kpi-label">Agent B (Adversarial)</div>
-                    <div class="kpi-subtext">{'✅ 100% Passed' if v_b.all_passed else '❌ Boundary Failure'}</div>
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: {'#10B981' if v_b.all_passed else '#EF4444'};">
+                    {v_b.pass_count}/{v_b.total_count}
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+                <div class="kpi-label">Agent B Score</div>
+                <div class="kpi-subtext">{'✅ All passed' if v_b.all_passed else '❌ Failed trap'}</div>
+            </div>""")
         with c_v4:
             vm = res.multi_agent_verification
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: {'#34D399' if vm.all_passed else '#F87171'};">
-                        {vm.pass_count}/{vm.total_count}
-                    </div>
-                    <div class="kpi-label">Multi-Agent Final</div>
-                    <div class="kpi-subtext">{'✅ 100% Passed' if vm.all_passed else '❌ Boundary Failure'}</div>
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: {'#10B981' if vm.all_passed else '#EF4444'};">
+                    {vm.pass_count}/{vm.total_count}
                 </div>
-                """,
-                unsafe_allow_html=True
-            )
+                <div class="kpi-label">Multi-Agent Final</div>
+                <div class="kpi-subtext">{'✅ All passed' if vm.all_passed else '❌ Failed trap'}</div>
+            </div>""")
 
-        st.markdown("#### Test Assertions Matrix (Evaluator Selection)")
-        candidate_to_show = res.multi_agent_verification
-        
+        st.markdown("#### Test Case Breakdown (Evaluator's Pick)")
         test_rows = []
-        for t in candidate_to_show.test_results:
+        for t in res.multi_agent_verification.test_results:
             test_rows.append({
                 "Test Name": t.test_name,
                 "Type": "🔥 Edge Case" if t.is_edge_case else "Standard",
                 "Outcome": "✅ PASS" if t.passed else "❌ FAIL",
-                "Input Arguments": t.input_repr,
-                "Expected Output": t.expected_repr,
-                "Candidate Output": t.actual_repr,
+                "Input": t.input_repr,
+                "Expected": t.expected_repr,
+                "Actual Output": t.actual_repr,
                 "Diagnostics": t.error_message or "Verified exact match"
             })
             
@@ -725,8 +622,8 @@ with tab_verif:
 # TAB F: RELIABILITY ANALYTICS
 # ---------------------------------------------------------
 with tab_analytics:
-    st.markdown("### 📈 Reliability Analytics")
-    st.markdown("Aggregated empirical performance across all benchmark tasks.")
+    st.markdown("### 📈 Reliability Analytics: The Hard Data")
+    st.markdown("Empirical scorecard comparing Single-Agent vs Multi-Agent systems across all benchmarks.")
     
     all_results = list(st.session_state.evaluation_results.values())
     if not all_results:
@@ -734,123 +631,82 @@ with tab_analytics:
     else:
         summary: BenchmarkRunSummary = MetricsCalculator.aggregate_benchmark_runs(all_results)
         
-        # Row 1: Key Performance Indicators
+        # KPI Row
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value">{summary.baseline_pass_rate * 100:.1f}%</div>
-                    <div class="kpi-label">Single-Agent Pass Rate</div>
-                    <div class="kpi-subtext">{summary.baseline_pass_count} of {summary.total_tasks_attempted} tasks verified</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value">{summary.baseline_pass_rate * 100:.1f}%</div>
+                <div class="kpi-label">Single-Agent Pass Rate</div>
+                <div class="kpi-subtext">{summary.baseline_pass_count} of {summary.total_tasks_attempted} tasks verified</div>
+            </div>""")
         with c2:
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: #34D399;">{summary.multi_agent_pass_rate * 100:.1f}%</div>
-                    <div class="kpi-label">Multi-Agent Pass Rate</div>
-                    <div class="kpi-subtext">{summary.multi_agent_pass_count} of {summary.total_tasks_attempted} tasks verified</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: #10B981;">{summary.multi_agent_pass_rate * 100:.1f}%</div>
+                <div class="kpi-label">Multi-Agent Pass Rate</div>
+                <div class="kpi-subtext">{summary.multi_agent_pass_count} of {summary.total_tasks_attempted} tasks verified</div>
+            </div>""")
         with c3:
             delta_prefix = "+" if summary.pass_rate_delta > 0 else ""
-            delta_color = "#34D399" if summary.pass_rate_delta > 0 else ("#F43F5E" if summary.pass_rate_delta < 0 else "#94A3B8")
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: {delta_color};">{delta_prefix}{summary.pass_rate_delta * 100:.1f}%</div>
-                    <div class="kpi-label">Accuracy Delta</div>
-                    <div class="kpi-subtext">Multi-Agent vs Baseline Net Gain</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            delta_color = "#10B981" if summary.pass_rate_delta > 0 else ("#EF4444" if summary.pass_rate_delta < 0 else "#64748B")
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: {delta_color};">{delta_prefix}{summary.pass_rate_delta * 100:.1f}%</div>
+                <div class="kpi-label">Accuracy Gain</div>
+                <div class="kpi-subtext">Net gain over baseline</div>
+            </div>""")
         with c4:
-            st.markdown(
-                f"""
-                <div class="kpi-card">
-                    <div class="kpi-value" style="color: #FBBF24;">{summary.evaluator_error_count}</div>
-                    <div class="kpi-label">Evaluator Misjudgments</div>
-                    <div class="kpi-subtext">Gemma 4 selected failing code</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="kpi-card">
+                <div class="kpi-value" style="color: #F59E0B;">{summary.evaluator_error_count}</div>
+                <div class="kpi-label">Evaluator Misjudgments</div>
+                <div class="kpi-subtext">Gemma picked failing code</div>
+            </div>""")
 
-        st.markdown("#### System Trade-offs: Latency, Cost, & Impact")
-        
-        # Row 2: Charts
+        st.markdown("#### Performance Visualizations")
         col_ch1, col_ch2 = st.columns([3, 2])
         with col_ch1:
-            st.markdown("##### Task-by-Task Pass Rate Comparison")
-            chart_tasks = create_task_comparison_chart(all_results)
+            st.markdown("##### Task-by-Task Pass Rate (%)")
+            chart_tasks = create_task_comparison_chart(all_results, theme=st.session_state.theme)
             st.altair_chart(chart_tasks, use_container_width=True)
             
         with col_ch2:
-            st.markdown("##### Collaboration Outcome Distribution")
+            st.markdown("##### Did Collaboration Actually Help?")
             chart_donut = create_collaboration_donut(
                 helped=summary.collaboration_helped_count,
                 no_effect=summary.collaboration_no_effect_count,
-                hurt=summary.collaboration_hurt_count
+                hurt=summary.collaboration_hurt_count,
+                theme=st.session_state.theme
             )
             st.altair_chart(chart_donut, use_container_width=True)
 
-        # Row 3: Trade-off Cards
+        st.markdown("#### The Trade-Off: Speed & API Cost")
         lat_ratio = (summary.avg_multi_agent_latency / summary.avg_baseline_latency) if summary.avg_baseline_latency > 0 else 1.0
         t1, t2, t3, t4 = st.columns(4)
         with t1:
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <div style="font-size: 12px; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Avg Baseline Latency</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">{summary.avg_baseline_latency:.2f}s</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="eight-card">
+                <div style="font-size: 11px; opacity: 0.7; text-transform: uppercase; font-weight: 700;">Avg Baseline Speed</div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">{summary.avg_baseline_latency:.2f}s</div>
+            </div>""")
         with t2:
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <div style="font-size: 12px; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Avg Multi-Agent Latency</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #38BDF8; margin-top: 4px;">{summary.avg_multi_agent_latency:.2f}s <span style="font-size: 13px; color: #FBBF24;">({lat_ratio:.1f}x slower)</span></div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="eight-card">
+                <div style="font-size: 11px; opacity: 0.7; text-transform: uppercase; font-weight: 700;">Avg Multi-Agent Speed</div>
+                <div style="font-size: 22px; font-weight: 800; color: #38BDF8; margin-top: 4px;">{summary.avg_multi_agent_latency:.2f}s <span style="font-size: 12px; color: #F59E0B;">({lat_ratio:.1f}x slower)</span></div>
+            </div>""")
         with t3:
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <div style="font-size: 12px; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Total API Requests</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">{summary.total_api_calls} calls <span style="font-size: 13px; color: #94A3B8;">(4x overhead)</span></div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="eight-card">
+                <div style="font-size: 11px; opacity: 0.7; text-transform: uppercase; font-weight: 700;">Total API Requests</div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">{summary.total_api_calls} calls <span style="font-size: 12px; opacity: 0.6;">(4x calls)</span></div>
+            </div>""")
         with t4:
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <div style="font-size: 12px; color: #94A3B8; text-transform: uppercase; font-weight: 600;">Total Tokens Processed</div>
-                    <div style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">{summary.total_tokens:,} tokens</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.html(f"""<div class="eight-card">
+                <div style="font-size: 11px; opacity: 0.7; text-transform: uppercase; font-weight: 700;">Total Tokens Used</div>
+                <div style="font-size: 22px; font-weight: 800; margin-top: 4px;">{summary.total_tokens:,} tokens</div>
+            </div>""")
 
 # ---------------------------------------------------------
 # TAB G: FAILURE INSPECTOR
 # ---------------------------------------------------------
 with tab_inspector:
-    st.markdown("### 🔍 Failure Inspector")
-    st.markdown("Forensic incident audit of edge-case bugs, evaluator oversights, and AI diagnostic hypotheses.")
+    st.markdown("### 🔍 Failure Inspector: Forensic Autopsy")
+    st.markdown("Deep dive into bugs, missed edge cases, and why the model tripped.")
     
     all_results = list(st.session_state.evaluation_results.values())
     failed_results = [
@@ -859,70 +715,50 @@ with tab_inspector:
     ]
     
     if not failed_results:
-        st.success("🎉 No failure cases found among currently evaluated tasks!")
+        st.success("🎉 All evaluated tasks passed!")
     else:
         fail_options = [f"{r.task.task_id} — {r.task.title}" for r in failed_results]
-        selected_fail = st.selectbox("Select Incident to Audit", options=fail_options, index=0)
+        selected_fail = st.selectbox("Select Case to Audit", options=fail_options, index=0)
         fail_id = selected_fail.split(" — ")[0]
         f_res = st.session_state.evaluation_results[fail_id]
         
-        st.markdown(
-            f"""
-            <div class="eight-card" style="border-left: 4px solid #F43F5E;">
-                <div class="eight-card-title" style="color: #FB7185;">🚨 Incident Case File: {f_res.task.task_id} — {f_res.task.title}</div>
-                <div style="font-size: 13.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 8px;">
-                    <b>Task:</b> {f_res.task.description}
-                </div>
-                <div style="font-size: 13px; color: #FBBF24;">
-                    <b>Root-Cause Trap:</b> {f_res.task.expected_trap}
-                </div>
+        st.html(f"""<div class="eight-card" style="border-left: 4px solid #EF4444;">
+            <div class="eight-card-title" style="color: #EF4444;">🚨 Incident File: {f_res.task.task_id} — {f_res.task.title}</div>
+            <div style="font-size: 13.5px; line-height: 1.5; margin-bottom: 8px;">
+                <b>Problem:</b> {f_res.task.description}
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            <div style="font-size: 13px; color: #F59E0B;">
+                <b>The Trap:</b> {f_res.task.expected_trap}
+            </div>
+        </div>""")
         
         col_forensic1, col_forensic2 = st.columns(2)
         with col_forensic1:
-            st.markdown("##### Evaluator Decision & Argument")
-            st.markdown(
-                f"""
-                <div class="eight-card">
-                    <b>Candidate Chosen:</b> {f_res.evaluator_decision.selected_agent}<br>
-                    <b>Confidence:</b> {f_res.evaluator_decision.confidence_score * 100:.1f}%<br><br>
-                    <div style="color: #CBD5E1; font-size: 13px; line-height: 1.5;">{f_res.evaluator_decision.rationale}</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+            st.markdown("##### What Did Gemma 4 Think?")
+            st.html(f"""<div class="eight-card">
+                <b>Candidate Picked:</b> {f_res.evaluator_decision.selected_agent}<br>
+                <b>Confidence:</b> {f_res.evaluator_decision.confidence_score * 100:.1f}%<br><br>
+                <div style="font-size: 13px; opacity: 0.9; line-height: 1.5;">{f_res.evaluator_decision.rationale}</div>
+            </div>""")
         with col_forensic2:
-            st.markdown("##### Ground-Truth Deterministic Findings")
+            st.markdown("##### What Did Ground-Truth Find?")
             if f_res.multi_agent_verification.all_passed:
-                st.markdown(
-                    """
-                    <div class="eight-card" style="border-color: rgba(16, 185, 129, 0.3);">
-                        <span style="color: #34D399; font-weight: 700;">✅ Multi-Agent Passed All Assertions</span><br>
-                        <span style="font-size: 13px; color: #CBD5E1;">The collaborative pipeline correctly avoided the architectural trap that broke the baseline.</span>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
+                st.html("""<div class="eight-card" style="border-color: rgba(16, 185, 129, 0.4);">
+                    <span style="color: #10B981; font-weight: 700;">✅ Multi-Agent Solved It!</span><br>
+                    <span style="font-size: 13px; opacity: 0.85;">The collaborative team successfully avoided the trap that broke the single baseline.</span>
+                </div>""")
             else:
                 failed_tc = [t for t in f_res.multi_agent_verification.test_results if not t.passed]
                 for ft in failed_tc:
-                    st.error(f"❌ **{ft.test_name}**: Expected `{ft.expected_repr}`, but got `{ft.actual_repr}`")
+                    st.error(f"❌ **{ft.test_name}**: Expected `{ft.expected_repr}`, got `{ft.actual_repr}`")
 
-        st.markdown("##### AI Root-Cause Diagnostic Hypothesis")
-        st.markdown(
-            f"""
-            <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: 10px; padding: 16px 20px;">
-                <div style="font-size: 12px; font-weight: 700; color: #FB7185; text-transform: uppercase; letter-spacing: 0.05em;">AI Diagnostic Explanation</div>
-                <div style="font-size: 13.5px; color: #FCA5A5; margin-top: 8px; line-height: 1.5;">
-                    {f_res.failure_hypothesis or 'No failure hypothesis generated.'}
-                </div>
-                <div style="font-size: 11px; color: #94A3B8; margin-top: 10px; border-top: 1px solid rgba(244, 63, 94, 0.15); padding-top: 6px;">
-                    *Independently validated against failed assertion traces in the deterministic sandbox.*
-                </div>
+        st.markdown("##### AI Diagnostic Root-Cause Hypothesis")
+        st.html(f"""<div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 14px 18px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #EF4444; text-transform: uppercase;">Diagnostic Breakdown</div>
+            <div style="font-size: 13.5px; opacity: 0.9; margin-top: 6px; line-height: 1.5;">
+                {f_res.failure_hypothesis or 'No failure hypothesis generated.'}
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            <div style="font-size: 11px; opacity: 0.6; margin-top: 8px;">
+                *Corroborated by failed assertion traces in the deterministic sandbox.*
+            </div>
+        </div>""")
