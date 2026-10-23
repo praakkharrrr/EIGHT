@@ -8,16 +8,19 @@ load_dotenv()
 @dataclass
 class Config:
     """Central configuration for EIGHT — AI Crash-Test Lab."""
-    # Model configuration
-    # Default model for Gemma 4 hackathon category:
-    DEFAULT_MODEL: str = os.getenv("GEMMA_MODEL", "gemma-4")
-    # Fallback or alternative supported model identifiers:
+    
+    # Supported model identifiers on Google Gemini / GenAI API:
     SUPPORTED_MODELS: tuple = (
-        "gemma-4",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
         "gemma-2-27b-it",
         "gemma-2-9b-it",
-        "gemini-2.5-flash",
+        "gemini-1.5-flash",
+        "gemma-4",
     )
+    
+    # Default model
+    DEFAULT_MODEL: str = os.getenv("GEMMA_MODEL", "gemini-2.5-flash")
     
     # API configuration
     API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", None)

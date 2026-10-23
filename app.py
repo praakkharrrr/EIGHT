@@ -65,6 +65,9 @@ if "evaluation_results" not in st.session_state:
 if "last_connectivity_status" not in st.session_state:
     st.session_state.last_connectivity_status = None
 
+if "available_models" not in st.session_state:
+    st.session_state.available_models = list(Config.SUPPORTED_MODELS)
+
 # ---------------------------------------------------------
 # SIDEBAR: Engine Settings & Fast Batch Runner
 # ---------------------------------------------------------
@@ -78,26 +81,40 @@ with st.sidebar:
     </div>""")
     
     st.markdown("##### ⚙️ Engine Settings")
-    st.caption("Switch between live Google Gemma 4 API calls and the safe offline simulator.")
+    st.caption("Connect your Gemini API key or use the built-in offline simulator.")
     
+    # Model dropdown with clear labels and active models first
+    model_options = [
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemma-2-27b-it",
+        "gemma-2-9b-it",
+        "gemini-1.5-flash",
+        "gemma-4"
+    ]
+    # Ensure any discovered models are included
+    for m in st.session_state.available_models:
+        if m not in model_options:
+            model_options.append(m)
+
     selected_model = st.selectbox(
-        "Gemma Model Identifier",
-        options=Config.SUPPORTED_MODELS,
+        "Model Identifier",
+        options=model_options,
         index=0,
-        help="Target model for Baseline, Agent A, Agent B, and Gemma 4 Evaluator."
+        help="Select a model supported on your API key. 'gemini-2.5-flash' and 'gemma-2-27b-it' are verified active endpoints."
     )
     
     runtime_api_key = st.text_input(
-        "Gemini / Gemma API Key",
+        "Gemini API Key",
         value=Config.API_KEY or "",
         type="password",
-        help="Stored in session memory only. Never logged or committed."
+        help="Paste your API key from Google AI Studio. Stored in memory only."
     )
     
     use_mock = st.toggle(
         "Use Offline Simulator",
         value=not Config.is_api_configured(runtime_api_key),
-        help="Runs realistic, deterministic simulations of agent failure modes and evaluator verdicts without spending API credits."
+        help="Simulates realistic edge cases and evaluation verdicts without consuming API quotas."
     )
     
     client = GemmaClient(
@@ -106,23 +123,25 @@ with st.sidebar:
         force_mock=use_mock
     )
     
-    col_ping, col_reset = st.columns([1, 1])
+    col_ping, col_discover = st.columns([1, 1])
     with col_ping:
         if st.button("📡 Ping API", use_container_width=True):
             with st.spinner("Connecting..."):
                 success, msg = client.test_connectivity()
                 st.session_state.last_connectivity_status = (success, msg)
-    with col_reset:
-        if st.button("🧹 Clear", use_container_width=True):
-            st.session_state.evaluation_results.clear()
-            st.rerun()
+    with col_discover:
+        if st.button("🔍 Find Models", use_container_width=True):
+            with st.spinner("Discovering models..."):
+                discovered = client.list_available_models()
+                st.session_state.available_models = discovered
+                st.success(f"Discovered {len(discovered)} models on your API key!")
                 
     if st.session_state.last_connectivity_status:
         success, msg = st.session_state.last_connectivity_status
         if success:
             st.success(msg)
         else:
-            st.info(msg)
+            st.warning(msg)
 
     st.markdown("---")
     st.markdown("##### 🚀 Batch Crash-Test")
@@ -161,6 +180,10 @@ with st.sidebar:
             st.success(f"Evaluated {len(tasks)} benchmark tasks.")
             st.rerun()
 
+    if st.button("🧹 Clear Results", use_container_width=True):
+        st.session_state.evaluation_results.clear()
+        st.rerun()
+
     st.html("""<div style="font-size: 11px; opacity: 0.6; margin-top: 30px; text-align: center;">
         EIGHT — AI Crash-Test Lab v1.0<br>
         Hackathon: Best Use of Gemma 4
@@ -169,11 +192,14 @@ with st.sidebar:
 # ---------------------------------------------------------
 # TOP HERO BANNER
 # ---------------------------------------------------------
-mode_pill = (
-    '<span class="badge-mock"><span class="pulse-dot-amber"></span>OFFLINE SIMULATOR</span>'
-    if client.is_mock_mode
-    else f'<span class="badge-real-api"><span class="pulse-dot-green"></span>LIVE GEMMA: {selected_model}</span>'
-)
+is_connected_live = (not client.is_mock_mode) and (st.session_state.last_connectivity_status and st.session_state.last_connectivity_status[0])
+
+if client.is_mock_mode:
+    mode_pill = '<span class="badge-mock"><span class="pulse-dot-amber"></span>OFFLINE SIMULATOR</span>'
+elif is_connected_live:
+    mode_pill = f'<span class="badge-real-api"><span class="pulse-dot-green"></span>LIVE: {selected_model}</span>'
+else:
+    mode_pill = f'<span class="badge-mock"><span class="pulse-dot-amber"></span>API SETUP: {selected_model}</span>'
 
 st.html(f"""<div class="eight-header">
     {BRAND_SVG}
