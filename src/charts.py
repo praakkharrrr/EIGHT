@@ -31,21 +31,21 @@ def create_task_comparison_chart(task_results: List[TaskEvaluationResult]) -> al
 
     df = pd.DataFrame(rows)
 
-    chart = alt.Chart(df).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+    chart = alt.Chart(df).mark_bar(cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
         x=alt.X("Strategy:N", title=None, axis=alt.Axis(labels=False, ticks=False)),
-        y=alt.Y("Pass Rate (%):Q", title="Test Pass Rate (%)", scale=alt.Scale(domain=[0, 100]), axis=alt.Axis(gridColor="rgba(255, 255, 255, 0.08)", labelColor="#CBD5E1", titleColor="#F8FAFC")),
+        y=alt.Y("Pass Rate (%):Q", title="Test Pass Rate (%)", scale=alt.Scale(domain=[0, 100]), axis=alt.Axis(gridColor="rgba(15, 23, 42, 0.08)", labelColor="#334155", titleColor="#0F172A")),
         color=alt.Color(
             "Strategy:N",
             scale=alt.Scale(
                 domain=["Single-Agent Baseline", "Multi-Agent Pipeline"],
-                range=["#A855F7", "#38BDF8"]
+                range=["#8B5CF6", "#0284C7"]
             ),
-            legend=alt.Legend(title="Strategy", orient="top", labelColor="#CBD5E1", titleColor="#F8FAFC")
+            legend=alt.Legend(title="Strategy", orient="top", labelColor="#334155", titleColor="#0F172A")
         ),
         column=alt.Column(
             "Task:N",
             title="Benchmark Task ID",
-            header=alt.Header(labelColor="#CBD5E1", titleColor="#F8FAFC", labelFont="Inter", labelFontSize=12)
+            header=alt.Header(labelColor="#334155", titleColor="#0F172A", labelFont="Plus Jakarta Sans", labelFontSize=12)
         ),
         tooltip=[
             alt.Tooltip("Task:N", title="Task ID"),
@@ -68,17 +68,17 @@ def create_collaboration_donut(helped: int, no_effect: int, hurt: int) -> alt.Ch
     """Donut chart illustrating the empirical impact of multi-agent collaboration."""
     source = pd.DataFrame([
         {"Outcome": "Helped (Multi passed, Baseline failed)", "Count": helped, "Color": "#10B981"},
-        {"Outcome": "No Effect (Equal pass/fail)", "Count": no_effect, "Color": "#64748B"},
-        {"Outcome": "Hurt (Baseline passed, Multi failed)", "Count": hurt, "Color": "#F43F5E"},
+        {"Outcome": "No Effect (Equal pass/fail)", "Count": no_effect, "Color": "#94A3B8"},
+        {"Outcome": "Hurt (Baseline passed, Multi failed)", "Count": hurt, "Color": "#EF4444"},
     ])
 
     source = source[source["Count"] > 0]
     if source.empty:
-        source = pd.DataFrame([{"Outcome": "No Data", "Count": 1, "Color": "#334155"}])
+        source = pd.DataFrame([{"Outcome": "No Data", "Count": 1, "Color": "#CBD5E1"}])
 
     chart = alt.Chart(source).mark_arc(innerRadius=60, outerRadius=95, cornerRadius=4).encode(
         theta=alt.Theta("Count:Q", stack=True),
-        color=alt.Color("Outcome:N", scale=alt.Scale(domain=source["Outcome"].tolist(), range=source["Color"].tolist()), legend=alt.Legend(orient="bottom", labelColor="#CBD5E1", title=None, labelLimit=250)),
+        color=alt.Color("Outcome:N", scale=alt.Scale(domain=source["Outcome"].tolist(), range=source["Color"].tolist()), legend=alt.Legend(orient="bottom", labelColor="#334155", title=None, labelLimit=250)),
         tooltip=[
             alt.Tooltip("Outcome:N", title="Outcome"),
             alt.Tooltip("Count:Q", title="Tasks Count")
@@ -102,13 +102,13 @@ def create_latency_comparison_chart(task_results: List[TaskEvaluationResult]) ->
 
     df = pd.DataFrame(data)
 
-    chart = alt.Chart(df).mark_bar(cornerRadiusTopRight=3, cornerRadiusBottomRight=3).encode(
-        y=alt.Y("Task:N", title="Task ID", axis=alt.Axis(labelColor="#CBD5E1", titleColor="#F8FAFC")),
-        x=alt.X("Seconds:Q", title="Execution Latency (seconds)", axis=alt.Axis(gridColor="rgba(255, 255, 255, 0.08)", labelColor="#CBD5E1", titleColor="#F8FAFC")),
+    chart = alt.Chart(df).mark_bar(cornerRadiusTopRight=4, cornerRadiusBottomRight=4).encode(
+        y=alt.Y("Task:N", title="Task ID", axis=alt.Axis(labelColor="#334155", titleColor="#0F172A")),
+        x=alt.X("Seconds:Q", title="Execution Latency (seconds)", axis=alt.Axis(gridColor="rgba(15, 23, 42, 0.08)", labelColor="#334155", titleColor="#0F172A")),
         color=alt.Color(
             "Strategy:N",
-            scale=alt.Scale(domain=["Baseline", "Multi-Agent Pipeline"], range=["#A855F7", "#38BDF8"]),
-            legend=alt.Legend(orient="top", labelColor="#CBD5E1", title=None)
+            scale=alt.Scale(domain=["Baseline", "Multi-Agent Pipeline"], range=["#8B5CF6", "#0284C7"]),
+            legend=alt.Legend(orient="top", labelColor="#334155", title=None)
         ),
         tooltip=[
             alt.Tooltip("Task:N"),

@@ -13,7 +13,7 @@ from src.agents import AgentRunner
 from src.evaluator import EvaluatorRunner
 from src.verification import VerificationEngine
 from src.metrics import MetricsCalculator
-from src.styles import BRAND_SVG, MASTERCLASS_CSS
+from src.styles import BRAND_SVG, FROSTED_GLASS_CSS
 from src.charts import (
     create_task_comparison_chart,
     create_collaboration_donut,
@@ -28,8 +28,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Inject Masterclass UI styles (safe rendering with zero icon breakage)
-st.html(MASTERCLASS_CSS)
+# Inject Liquid Frosted Glass Aurora UI styles (safe rendering with zero icon breakage)
+st.html(FROSTED_GLASS_CSS)
 
 # Initialize Benchmark Manager
 benchmark_manager = BenchmarkManager()
@@ -86,11 +86,11 @@ if "selected_model_name" not in st.session_state:
 # SIDEBAR: Engine Settings & Fast Batch Runner
 # ---------------------------------------------------------
 with st.sidebar:
-    st.html(f"""<div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+    st.html(f"""<div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1.5px solid rgba(255,255,255,0.85);">
         {BRAND_SVG}
         <div>
-            <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">EIGHT</div>
-            <div style="font-size: 11px; color: #38BDF8; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">AI Crash-Test Lab</div>
+            <div style="font-size: 20px; font-weight: 800; color: #0F172A; letter-spacing: -0.02em;">EIGHT</div>
+            <div style="font-size: 11px; color: #0284C7; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">AI Crash-Test Lab</div>
         </div>
     </div>""")
     
@@ -200,13 +200,13 @@ with st.sidebar:
         st.session_state.evaluation_results.clear()
         st.rerun()
 
-    st.html("""<div style="font-size: 11px; opacity: 0.6; margin-top: 24px; text-align: center;">
+    st.html("""<div style="font-size: 11px; opacity: 0.7; margin-top: 24px; text-align: center; color: #64748B;">
         EIGHT — AI Crash-Test Lab v1.0<br>
         Hackathon: Best Use of Gemma 4
     </div>""")
 
 # ---------------------------------------------------------
-# TOP HERO BANNER
+# TOP FLOATING FROSTED GLASS CAPSULE NAV
 # ---------------------------------------------------------
 is_connected_live = (not client.is_mock_mode) and (st.session_state.last_connectivity_status and st.session_state.last_connectivity_status[0])
 
@@ -217,14 +217,35 @@ elif is_connected_live:
 else:
     mode_pill = f'<span class="badge-mock"><span class="pulse-dot-amber"></span>API READY: {selected_model}</span>'
 
-st.html(f"""<div class="eight-header">
-    {BRAND_SVG}
-    <div class="eight-title-group">
-        <div class="eight-title-row">
-            <h1 class="eight-main-title">EIGHT — AI CRASH-TEST LAB</h1>
-            <div>{mode_pill}</div>
+st.html(f"""<div class="glass-nav-capsule">
+    <div class="glass-nav-brand">
+        {BRAND_SVG}
+        <span class="glass-nav-title">EIGHT</span>
+    </div>
+    <div class="glass-nav-links">
+        <span>Overview</span>
+        <span>Evaluation Lab</span>
+        <span>Agent Arena</span>
+        <span>Verification</span>
+        <span>Analytics</span>
+    </div>
+    <div>
+        {mode_pill}
+    </div>
+</div>""")
+
+# ---------------------------------------------------------
+# HERO DISPLAY FRAME (Kite AI Frosted Glass Style)
+# ---------------------------------------------------------
+st.html(f"""<div class="hero-glass-frame">
+    <div class="hero-main-heading">
+        The AI Crash-Test Lab <span class="pixel-accent">[ E I G H T ]</span>
+    </div>
+    <div class="hero-subcard">
+        <div class="hero-subcard-text">
+            <strong>"Don't trust the answer. Test the intelligence behind it."</strong><br>
+            An empirical reliability evaluation platform comparing Single-Agent vs Multi-Agent collaborative intelligence against deterministic, AST-audited Python ground truth.
         </div>
-        <div class="eight-tagline">"Don't trust the answer. Test the intelligence behind it."</div>
         <div class="stats-strip">
             <span class="stat-pill">🎯 <b>8 Curated Benchmarks</b></span>
             <span class="stat-pill">⚔️ <b>1 Baseline vs 2 Specialists</b></span>
@@ -235,7 +256,7 @@ st.html(f"""<div class="eight-header">
 </div>""")
 
 # ---------------------------------------------------------
-# NAVIGATION TABS (High Contrast & Perfectly Readable)
+# NAVIGATION TABS (Liquid Glass Capsule Tabs)
 # ---------------------------------------------------------
 tab_overview, tab_lab, tab_arena, tab_eval, tab_verif, tab_analytics, tab_inspector = st.tabs([
     "📊 Overview",
@@ -266,7 +287,7 @@ We put AI-generated code through an **independent sandbox** to answer:
     with col_ov1:
         st.html("""<div class="eight-card">
             <div class="eight-card-title">🎯 Baseline vs Collaboration</div>
-            <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.5; margin: 0;">
+            <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin: 0;">
                 We pit a single-agent zero-shot baseline directly against a collaborative multi-agent pipeline 
                 (Analytical Specialist + Edge-Case Specialist + Gemma 4 Judge).
             </p>
@@ -274,14 +295,14 @@ We put AI-generated code through an **independent sandbox** to answer:
     with col_ov2:
         st.html("""<div class="eight-card">
             <div class="eight-card-title">🛡️ Deterministic Ground Truth</div>
-            <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.5; margin: 0;">
+            <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin: 0;">
                 Zero AI self-grading loops. Every candidate function is tested in a sandboxed Python runner against strict boundary assertions.
             </p>
         </div>""")
     with col_ov3:
         st.html("""<div class="eight-card">
             <div class="eight-card-title">🚨 The Cost & Failure Audit</div>
-            <p style="font-size: 13.5px; color: #94A3B8; line-height: 1.5; margin: 0;">
+            <p style="font-size: 13.5px; color: #475569; line-height: 1.5; margin: 0;">
                 We measure the trade-offs: multi-agent takes ~3.5x longer and 4x the API calls. We track where collaboration helped, did nothing, or backfired.
             </p>
         </div>""")
@@ -338,31 +359,31 @@ with tab_lab:
     current_task = task_map[current_task_id]
     
     diff_color = {
-        "Easy": "#34D399",
-        "Medium": "#FBBF24",
-        "Hard": "#C084FC"
-    }.get(current_task.difficulty, "#38BDF8")
+        "Easy": "#059669",
+        "Medium": "#D97706",
+        "Hard": "#7C3AED"
+    }.get(current_task.difficulty, "#0284C7")
     
     col_t1, col_t2 = st.columns([3, 2])
     with col_t1:
         st.html(f"""<div class="eight-card">
             <div class="eight-card-title">
                 <span>📋 {current_task.title}</span>
-                <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(255,255,255,0.06); color: {diff_color}; font-weight: 700;">
+                <span style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(0,0,0,0.06); color: {diff_color}; font-weight: 700;">
                     {current_task.difficulty}
                 </span>
             </div>
-            <p style="font-size: 14px; color: #E2E8F0; line-height: 1.5; margin: 0 0 12px 0;">{current_task.description}</p>
-            <div style="font-size: 12.5px; color: #94A3B8; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
+            <p style="font-size: 14px; color: #334155; line-height: 1.5; margin: 0 0 12px 0;">{current_task.description}</p>
+            <div style="font-size: 12.5px; color: #64748B; padding-top: 10px; border-top: 1.5px solid rgba(255,255,255,0.85);">
                 <b>Inputs:</b> <code>{current_task.input_spec}</code><br>
                 <b>Expected Output:</b> <code>{current_task.output_spec}</code>
             </div>
         </div>""")
     with col_t2:
         st.html(f"""<div class="eight-card">
-            <div class="eight-card-title" style="color: #F87171;">⚠️ The Sneaky Trap</div>
-            <p style="font-size: 13px; color: #CBD5E1; line-height: 1.5; margin: 0 0 12px 0;">{current_task.expected_trap}</p>
-            <div style="font-size: 12px; color: #38BDF8; font-weight: 600; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+            <div class="eight-card-title" style="color: #DC2626;">⚠️ The Sneaky Trap</div>
+            <p style="font-size: 13px; color: #475569; line-height: 1.5; margin: 0 0 12px 0;">{current_task.expected_trap}</p>
+            <div style="font-size: 12px; color: #0284C7; font-weight: 600; padding-top: 8px; border-top: 1.5px solid rgba(255,255,255,0.85);">
                 🛡️ Tested with {len(current_task.test_cases)} strict assertions
             </div>
         </div>""")
@@ -388,25 +409,25 @@ with tab_lab:
     if current_task_id in st.session_state.evaluation_results:
         res = st.session_state.evaluation_results[current_task_id]
         outcome_color = {
-            "Helped": "#10B981",
-            "Hurt": "#EF4444",
-            "No Effect": "#94A3B8",
-            "Indeterminate": "#94A3B8"
-        }.get(res.collaboration_outcome, "#94A3B8")
+            "Helped": "#059669",
+            "Hurt": "#DC2626",
+            "No Effect": "#64748B",
+            "Indeterminate": "#64748B"
+        }.get(res.collaboration_outcome, "#64748B")
         
-        st.html(f"""<div style="background: #111827; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px 18px; margin-top: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        st.html(f"""<div class="eight-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 15px;">
             <div>
                 <b>Verification Result:</b>
-                <span style="color: {'#10B981' if res.baseline_verification.all_passed else '#EF4444'}; margin-left: 8px;">
+                <span style="color: {'#059669' if res.baseline_verification.all_passed else '#DC2626'}; margin-left: 8px; font-weight: 700;">
                     Baseline: {'✅ Passed' if res.baseline_verification.all_passed else '❌ Failed'}
                 </span>
-                <span style="opacity: 0.4; margin: 0 8px;">|</span>
-                <span style="color: {'#10B981' if res.multi_agent_verification.all_passed else '#EF4444'};">
+                <span style="opacity: 0.3; margin: 0 8px;">|</span>
+                <span style="color: {'#059669' if res.multi_agent_verification.all_passed else '#DC2626'}; font-weight: 700;">
                     Multi-Agent Final: {'✅ Passed' if res.multi_agent_verification.all_passed else '❌ Failed'}
                 </span>
             </div>
             <div>
-                <span style="background: rgba(255,255,255,0.05); color: {outcome_color}; font-weight: 700; padding: 4px 12px; border-radius: 6px; font-size: 13px;">
+                <span style="background: rgba(0,0,0,0.05); color: {outcome_color}; font-weight: 700; padding: 6px 14px; border-radius: 9999px; font-size: 13px;">
                     Collaboration: {res.collaboration_outcome}
                 </span>
             </div>
@@ -437,8 +458,8 @@ with tab_arena:
             st.html("""<div class="agent-header-badge badge-baseline">
                 <span style="font-size: 18px;">🟣</span>
                 <div>
-                    <div style="font-weight: 700; font-size: 14px;">Single-Agent Baseline</div>
-                    <div style="font-size: 11px; opacity: 0.8;">The Fast One-Shot Attempt</div>
+                    <div style="font-weight: 800; font-size: 14px;">Single-Agent Baseline</div>
+                    <div style="font-size: 11px; opacity: 0.85;">The Fast One-Shot Attempt</div>
                 </div>
             </div>""")
             st.code(res.baseline_output.parsed_code or res.baseline_output.raw_response or "# No code", language="python")
@@ -450,8 +471,8 @@ with tab_arena:
             st.html("""<div class="agent-header-badge badge-agent-a">
                 <span style="font-size: 18px;">🔵</span>
                 <div>
-                    <div style="font-weight: 700; font-size: 14px;">Agent A (Algorithmic)</div>
-                    <div style="font-size: 11px; opacity: 0.8;">First-Principles Design</div>
+                    <div style="font-weight: 800; font-size: 14px;">Agent A (Algorithmic)</div>
+                    <div style="font-size: 11px; opacity: 0.85;">First-Principles Design</div>
                 </div>
             </div>""")
             st.code(res.agent_a_output.parsed_code or res.agent_a_output.raw_response or "# No code", language="python")
@@ -463,8 +484,8 @@ with tab_arena:
             st.html("""<div class="agent-header-badge badge-agent-b">
                 <span style="font-size: 18px;">🟢</span>
                 <div>
-                    <div style="font-weight: 700; font-size: 14px;">Agent B (Adversarial)</div>
-                    <div style="font-size: 11px; opacity: 0.8;">Edge-Case Specialist</div>
+                    <div style="font-weight: 800; font-size: 14px;">Agent B (Adversarial)</div>
+                    <div style="font-size: 11px; opacity: 0.85;">Edge-Case Specialist</div>
                 </div>
             </div>""")
             st.code(res.agent_b_output.parsed_code or res.agent_b_output.raw_response or "# No code", language="python")
@@ -502,7 +523,7 @@ with tab_eval:
                 <div class="eight-card-title">
                     <span>🏆 Evaluator Pick: <b>{ev.selected_agent}</b></span>
                 </div>
-                <p style="font-size: 14px; color: #E2E8F0; line-height: 1.6; margin: 0;">
+                <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0;">
                     {ev.rationale}
                 </p>
             </div>""")
@@ -510,15 +531,15 @@ with tab_eval:
             st.markdown("##### Potential Edge Cases Flagged by Evaluator")
             if ev.potential_failure_modes:
                 for mode in ev.potential_failure_modes:
-                    st.markdown(f"- ⚠️ <span style='color: #F87171;'>{mode}</span>", unsafe_allow_html=True)
+                    st.markdown(f"- ⚠️ <span style='color: #DC2626;'>{mode}</span>", unsafe_allow_html=True)
             else:
                 st.caption("No edge-case risks noted.")
 
         with col_ev_meta:
             st.html(f"""<div class="eight-card">
                 <div class="eight-card-title">📊 Evaluator Metadata</div>
-                <div style="font-size: 13px; color: #94A3B8; line-height: 1.8;">
-                    <b>Confidence:</b> <span style="color: #38BDF8; font-weight: 700;">{ev.confidence_score * 100:.1f}%</span><br>
+                <div style="font-size: 13px; color: #475569; line-height: 1.8;">
+                    <b>Confidence:</b> <span style="color: #0284C7; font-weight: 700;">{ev.confidence_score * 100:.1f}%</span><br>
                     <b>Review Latency:</b> {ev.latency_seconds:.2f}s<br>
                     <b>Tokens Used:</b> {ev.tokens_used}<br>
                     <b>Mode:</b> {'Simulation Simulator' if ev.is_mock else 'Live Gemma 4 API'}<br>
@@ -560,7 +581,7 @@ with tab_verif:
         with c_v1:
             vb = res.baseline_verification
             st.html(f"""<div class="kpi-card">
-                <div class="kpi-value" style="color: {'#10B981' if vb.all_passed else '#EF4444'};">
+                <div class="kpi-value" style="color: {'#059669' if vb.all_passed else '#DC2626'};">
                     {vb.pass_count}/{vb.total_count}
                 </div>
                 <div class="kpi-label">Baseline Score</div>
@@ -569,7 +590,7 @@ with tab_verif:
         with c_v2:
             va = res.agent_a_verification
             st.html(f"""<div class="kpi-card">
-                <div class="kpi-value" style="color: {'#10B981' if va.all_passed else '#EF4444'};">
+                <div class="kpi-value" style="color: {'#059669' if va.all_passed else '#DC2626'};">
                     {va.pass_count}/{va.total_count}
                 </div>
                 <div class="kpi-label">Agent A Score</div>
@@ -578,7 +599,7 @@ with tab_verif:
         with c_v3:
             v_b = res.agent_b_verification
             st.html(f"""<div class="kpi-card">
-                <div class="kpi-value" style="color: {'#10B981' if v_b.all_passed else '#EF4444'};">
+                <div class="kpi-value" style="color: {'#059669' if v_b.all_passed else '#DC2626'};">
                     {v_b.pass_count}/{v_b.total_count}
                 </div>
                 <div class="kpi-label">Agent B Score</div>
@@ -587,7 +608,7 @@ with tab_verif:
         with c_v4:
             vm = res.multi_agent_verification
             st.html(f"""<div class="kpi-card">
-                <div class="kpi-value" style="color: {'#10B981' if vm.all_passed else '#EF4444'};">
+                <div class="kpi-value" style="color: {'#059669' if vm.all_passed else '#DC2626'};">
                     {vm.pass_count}/{vm.total_count}
                 </div>
                 <div class="kpi-label">Multi-Agent Final</div>
@@ -633,13 +654,13 @@ with tab_analytics:
             </div>""")
         with c2:
             st.html(f"""<div class="kpi-card">
-                <div class="kpi-value" style="color: #10B981;">{summary.multi_agent_pass_rate * 100:.1f}%</div>
+                <div class="kpi-value" style="color: #059669;">{summary.multi_agent_pass_rate * 100:.1f}%</div>
                 <div class="kpi-label">Multi-Agent Pass Rate</div>
                 <div class="kpi-subtext">{summary.multi_agent_pass_count} of {summary.total_tasks_attempted} tasks verified</div>
             </div>""")
         with c3:
             delta_prefix = "+" if summary.pass_rate_delta > 0 else ""
-            delta_color = "#10B981" if summary.pass_rate_delta > 0 else ("#EF4444" if summary.pass_rate_delta < 0 else "#64748B")
+            delta_color = "#059669" if summary.pass_rate_delta > 0 else ("#DC2626" if summary.pass_rate_delta < 0 else "#64748B")
             st.html(f"""<div class="kpi-card">
                 <div class="kpi-value" style="color: {delta_color};">{delta_prefix}{summary.pass_rate_delta * 100:.1f}%</div>
                 <div class="kpi-label">Accuracy Gain</div>
@@ -647,7 +668,7 @@ with tab_analytics:
             </div>""")
         with c4:
             st.html(f"""<div class="kpi-card">
-                <div class="kpi-value" style="color: #F59E0B;">{summary.evaluator_error_count}</div>
+                <div class="kpi-value" style="color: #D97706;">{summary.evaluator_error_count}</div>
                 <div class="kpi-label">Evaluator Misjudgments</div>
                 <div class="kpi-subtext">Gemma picked failing code</div>
             </div>""")
@@ -673,23 +694,23 @@ with tab_analytics:
         t1, t2, t3, t4 = st.columns(4)
         with t1:
             st.html(f"""<div class="eight-card">
-                <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700;">Avg Baseline Speed</div>
-                <div style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">{summary.avg_baseline_latency:.2f}s</div>
+                <div style="font-size: 11px; color: #64748B; text-transform: uppercase; font-weight: 700;">Avg Baseline Speed</div>
+                <div style="font-size: 24px; font-weight: 800; color: #0F172A; margin-top: 4px;">{summary.avg_baseline_latency:.2f}s</div>
             </div>""")
         with t2:
             st.html(f"""<div class="eight-card">
-                <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700;">Avg Multi-Agent Speed</div>
-                <div style="font-size: 22px; font-weight: 800; color: #38BDF8; margin-top: 4px;">{summary.avg_multi_agent_latency:.2f}s <span style="font-size: 12px; color: #F59E0B;">({lat_ratio:.1f}x slower)</span></div>
+                <div style="font-size: 11px; color: #64748B; text-transform: uppercase; font-weight: 700;">Avg Multi-Agent Speed</div>
+                <div style="font-size: 24px; font-weight: 800; color: #0284C7; margin-top: 4px;">{summary.avg_multi_agent_latency:.2f}s <span style="font-size: 12px; color: #D97706; font-weight: 600;">({lat_ratio:.1f}x slower)</span></div>
             </div>""")
         with t3:
             st.html(f"""<div class="eight-card">
-                <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700;">Total API Requests</div>
-                <div style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">{summary.total_api_calls} calls <span style="font-size: 12px; color: #94A3B8;">(4x calls)</span></div>
+                <div style="font-size: 11px; color: #64748B; text-transform: uppercase; font-weight: 700;">Total API Requests</div>
+                <div style="font-size: 24px; font-weight: 800; color: #0F172A; margin-top: 4px;">{summary.total_api_calls} calls <span style="font-size: 12px; color: #64748B; font-weight: 600;">(4x calls)</span></div>
             </div>""")
         with t4:
             st.html(f"""<div class="eight-card">
-                <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; font-weight: 700;">Total Tokens Used</div>
-                <div style="font-size: 22px; font-weight: 800; color: #F8FAFC; margin-top: 4px;">{summary.total_tokens:,} tokens</div>
+                <div style="font-size: 11px; color: #64748B; text-transform: uppercase; font-weight: 700;">Total Tokens Used</div>
+                <div style="font-size: 24px; font-weight: 800; color: #0F172A; margin-top: 4px;">{summary.total_tokens:,} tokens</div>
             </div>""")
 
 # ---------------------------------------------------------
@@ -713,12 +734,12 @@ with tab_inspector:
         fail_id = selected_fail.split(" — ")[0]
         f_res = st.session_state.evaluation_results[fail_id]
         
-        st.html(f"""<div class="eight-card" style="border-left: 4px solid #EF4444;">
-            <div class="eight-card-title" style="color: #EF4444;">🚨 Incident File: {f_res.task.task_id} — {f_res.task.title}</div>
-            <div style="font-size: 13.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 8px;">
+        st.html(f"""<div class="eight-card" style="border-left: 4px solid #DC2626;">
+            <div class="eight-card-title" style="color: #DC2626;">🚨 Incident File: {f_res.task.task_id} — {f_res.task.title}</div>
+            <div style="font-size: 13.5px; color: #334155; line-height: 1.5; margin-bottom: 8px;">
                 <b>Problem:</b> {f_res.task.description}
             </div>
-            <div style="font-size: 13px; color: #F59E0B;">
+            <div style="font-size: 13px; color: #D97706;">
                 <b>The Trap:</b> {f_res.task.expected_trap}
             </div>
         </div>""")
@@ -729,14 +750,14 @@ with tab_inspector:
             st.html(f"""<div class="eight-card">
                 <b>Candidate Picked:</b> {f_res.evaluator_decision.selected_agent}<br>
                 <b>Confidence:</b> {f_res.evaluator_decision.confidence_score * 100:.1f}%<br><br>
-                <div style="font-size: 13px; color: #CBD5E1; line-height: 1.5;">{f_res.evaluator_decision.rationale}</div>
+                <div style="font-size: 13px; color: #475569; line-height: 1.5;">{f_res.evaluator_decision.rationale}</div>
             </div>""")
         with col_forensic2:
             st.markdown("##### What Did Ground-Truth Find?")
             if f_res.multi_agent_verification.all_passed:
                 st.html("""<div class="eight-card" style="border-color: rgba(16, 185, 129, 0.4);">
-                    <span style="color: #10B981; font-weight: 700;">✅ Multi-Agent Solved It!</span><br>
-                    <span style="font-size: 13px; color: #CBD5E1;">The collaborative team successfully avoided the trap that broke the single baseline.</span>
+                    <span style="color: #059669; font-weight: 700;">✅ Multi-Agent Solved It!</span><br>
+                    <span style="font-size: 13px; color: #475569;">The collaborative team successfully avoided the trap that broke the single baseline.</span>
                 </div>""")
             else:
                 failed_tc = [t for t in f_res.multi_agent_verification.test_results if not t.passed]
@@ -744,12 +765,12 @@ with tab_inspector:
                     st.error(f"❌ **{ft.test_name}**: Expected `{ft.expected_repr}`, got `{ft.actual_repr}`")
 
         st.markdown("##### AI Diagnostic Root-Cause Hypothesis")
-        st.html(f"""<div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 14px 18px;">
-            <div style="font-size: 11.5px; font-weight: 700; color: #EF4444; text-transform: uppercase;">Diagnostic Breakdown</div>
-            <div style="font-size: 13.5px; color: #FCA5A5; margin-top: 6px; line-height: 1.5;">
+        st.html(f"""<div style="background: rgba(239, 68, 68, 0.08); border: 1.5px solid rgba(239, 68, 68, 0.25); border-radius: 14px; padding: 16px 20px;">
+            <div style="font-size: 11.5px; font-weight: 800; color: #DC2626; text-transform: uppercase;">Diagnostic Breakdown</div>
+            <div style="font-size: 13.5px; color: #991B1B; margin-top: 6px; line-height: 1.5; font-weight: 500;">
                 {f_res.failure_hypothesis or 'No failure hypothesis generated.'}
             </div>
-            <div style="font-size: 11px; color: #94A3B8; margin-top: 8px;">
+            <div style="font-size: 11px; color: #64748B; margin-top: 8px;">
                 *Corroborated by failed assertion traces in the deterministic sandbox.*
             </div>
         </div>""")
