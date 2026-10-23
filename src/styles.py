@@ -1,5 +1,6 @@
 """
 Styles, branding, and dynamic Dark / Light theme engine for EIGHT — AI Crash-Test Lab.
+Ensures 100% legibility, contrast, and component styling across both modes.
 """
 
 BRAND_SVG = """<svg width="44" height="44" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -24,14 +25,13 @@ BRAND_SVG = """<svg width="44" height="44" viewBox="0 0 100 100" fill="none" xml
 </svg>"""
 
 def get_theme_css(theme: str = "dark") -> str:
-    """Returns dynamic CSS tailored for either dark or light mode."""
+    """Returns dynamic CSS tailored for either dark or light mode with strict contrast."""
     is_dark = (theme.lower() == "dark")
     
     if is_dark:
         bg_color = "#0B0F19"
         bg_gradient = "radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.05) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%)"
         card_bg = "#111827"
-        card_secondary = "#0F172A"
         border_color = "rgba(255, 255, 255, 0.08)"
         border_hover = "rgba(56, 189, 248, 0.3)"
         text_primary = "#F8FAFC"
@@ -42,27 +42,34 @@ def get_theme_css(theme: str = "dark") -> str:
         kpi_bg = "linear-gradient(180deg, #131B2E 0%, #0F172A 100%)"
         code_bg = "#0D121F"
         tab_bg = "#0E1424"
+        tab_inactive_text = "#94A3B8"
         tab_active_text = "#FFFFFF"
         stat_pill_bg = "rgba(255, 255, 255, 0.04)"
         callout_bg = "rgba(30, 41, 59, 0.6)"
+        input_bg = "#111827"
+        input_border = "rgba(255, 255, 255, 0.12)"
+        input_text = "#F8FAFC"
     else:
         bg_color = "#F8FAFC"
-        bg_gradient = "radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.6) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.6) 0px, transparent 50%)"
+        bg_gradient = "radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.7) 0px, transparent 50%), radial-gradient(at 100% 0%, rgba(241, 245, 249, 0.7) 0px, transparent 50%)"
         card_bg = "#FFFFFF"
-        card_secondary = "#F1F5F9"
-        border_color = "rgba(15, 23, 42, 0.1)"
-        border_hover = "rgba(2, 132, 199, 0.4)"
+        border_color = "#E2E8F0"
+        border_hover = "#0284C7"
         text_primary = "#0F172A"
-        text_secondary = "#475569"
+        text_secondary = "#334155"
         text_muted = "#64748B"
         sidebar_bg = "#F1F5F9"
-        header_bg = "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%)"
+        header_bg = "linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%)"
         kpi_bg = "linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)"
         code_bg = "#F8FAFC"
         tab_bg = "#E2E8F0"
+        tab_inactive_text = "#1E293B"
         tab_active_text = "#FFFFFF"
-        stat_pill_bg = "rgba(15, 23, 42, 0.04)"
-        callout_bg = "rgba(241, 245, 249, 0.9)"
+        stat_pill_bg = "#E2E8F0"
+        callout_bg = "#F1F5F9"
+        input_bg = "#FFFFFF"
+        input_border = "#CBD5E1"
+        input_text = "#0F172A"
 
     return f"""<style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -75,7 +82,7 @@ def get_theme_css(theme: str = "dark") -> str:
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }}
 
-/* Typography */
+/* Global Text */
 h1, h2, h3, h4, h5, h6 {{
     font-family: 'Plus Jakarta Sans', sans-serif !important;
     color: {text_primary} !important;
@@ -99,7 +106,7 @@ p, span, label, div {{
     border: 1px solid {border_color};
     border-radius: 14px;
     margin-bottom: 22px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, {'0.3' if is_dark else '0.06'});
+    box-shadow: 0 4px 20px rgba(0, 0, 0, {'0.3' if is_dark else '0.05'});
 }}
 
 .eight-title-group {{
@@ -117,14 +124,14 @@ p, span, label, div {{
 .eight-main-title {{
     font-size: 24px;
     font-weight: 800;
-    color: {text_primary};
+    color: {text_primary} !important;
     margin: 0;
     letter-spacing: -0.02em;
 }}
 
 .eight-tagline {{
     font-size: 13px;
-    color: {text_secondary};
+    color: {text_secondary} !important;
     margin-top: 3px;
     font-weight: 500;
 }}
@@ -140,7 +147,7 @@ p, span, label, div {{
 
 .stat-pill {{
     font-size: 11.5px;
-    color: {text_secondary};
+    color: {text_secondary} !important;
     background: {stat_pill_bg};
     border: 1px solid {border_color};
     padding: 3px 10px;
@@ -148,6 +155,7 @@ p, span, label, div {{
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    font-weight: 500;
 }}
 
 /* Content Cards */
@@ -159,6 +167,7 @@ p, span, label, div {{
     margin-bottom: 16px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, {'0.25' if is_dark else '0.04'});
     transition: border-color 0.15s ease, transform 0.15s ease;
+    color: {text_primary} !important;
 }}
 
 .eight-card:hover {{
@@ -168,7 +177,7 @@ p, span, label, div {{
 .eight-card-title {{
     font-size: 14.5px;
     font-weight: 700;
-    color: {'#38BDF8' if is_dark else '#0284C7'};
+    color: {'#38BDF8' if is_dark else '#0284C7'} !important;
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -178,7 +187,7 @@ p, span, label, div {{
 /* Status Badges */
 .badge-real-api {{
     background: rgba(16, 185, 129, {'0.15' if is_dark else '0.12'});
-    color: {'#34D399' if is_dark else '#059669'};
+    color: {'#34D399' if is_dark else '#059669'} !important;
     border: 1px solid rgba(16, 185, 129, 0.3);
     padding: 4px 12px;
     border-radius: 20px;
@@ -191,7 +200,7 @@ p, span, label, div {{
 
 .badge-mock {{
     background: rgba(245, 158, 11, {'0.15' if is_dark else '0.12'});
-    color: {'#FBBF24' if is_dark else '#D97706'};
+    color: {'#FBBF24' if is_dark else '#D97706'} !important;
     border: 1px solid rgba(245, 158, 11, 0.3);
     padding: 4px 12px;
     border-radius: 20px;
@@ -250,7 +259,7 @@ p, span, label, div {{
 .kpi-value {{
     font-size: 30px;
     font-weight: 800;
-    color: {text_primary};
+    color: {text_primary} !important;
     line-height: 1.1;
     letter-spacing: -0.02em;
 }}
@@ -258,7 +267,7 @@ p, span, label, div {{
 .kpi-label {{
     font-size: 11.5px;
     font-weight: 700;
-    color: {text_secondary};
+    color: {text_secondary} !important;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-top: 6px;
@@ -266,7 +275,7 @@ p, span, label, div {{
 
 .kpi-subtext {{
     font-size: 11.5px;
-    color: {text_muted};
+    color: {text_muted} !important;
     margin-top: 4px;
 }}
 
@@ -284,7 +293,7 @@ p, span, label, div {{
 
 .step-num {{
     background: linear-gradient(135deg, #0284C7, #38BDF8);
-    color: #FFFFFF;
+    color: #FFFFFF !important;
     font-weight: 800;
     font-size: 12px;
     width: 26px;
@@ -299,12 +308,12 @@ p, span, label, div {{
 .step-body-title {{
     font-size: 13.5px;
     font-weight: 700;
-    color: {text_primary};
+    color: {text_primary} !important;
 }}
 
 .step-body-desc {{
     font-size: 12px;
-    color: {text_secondary};
+    color: {text_secondary} !important;
     line-height: 1.4;
     margin-top: 2px;
 }}
@@ -322,19 +331,19 @@ p, span, label, div {{
 .badge-baseline {{
     background: rgba(147, 51, 234, {'0.12' if is_dark else '0.08'});
     border: 1px solid rgba(147, 51, 234, 0.25);
-    color: {'#C084FC' if is_dark else '#7E22CE'};
+    color: {'#C084FC' if is_dark else '#7E22CE'} !important;
 }}
 
 .badge-agent-a {{
     background: rgba(14, 165, 233, {'0.12' if is_dark else '0.08'});
     border: 1px solid rgba(14, 165, 233, 0.25);
-    color: {'#38BDF8' if is_dark else '#0284C7'};
+    color: {'#38BDF8' if is_dark else '#0284C7'} !important;
 }}
 
 .badge-agent-b {{
     background: rgba(16, 185, 129, {'0.12' if is_dark else '0.08'});
     border: 1px solid rgba(16, 185, 129, 0.25);
-    color: {'#34D399' if is_dark else '#059669'};
+    color: {'#34D399' if is_dark else '#059669'} !important;
 }}
 
 /* Callouts */
@@ -344,18 +353,66 @@ p, span, label, div {{
     border-radius: 0 8px 8px 0;
     padding: 12px 16px;
     font-size: 13px;
-    color: {text_secondary};
+    color: {text_secondary} !important;
     margin: 14px 0;
     line-height: 1.5;
 }}
 
-/* Sidebar styling */
+/* -------------------------------------------------------------
+   STREAMLIT SIDEBAR CONTRAST & FORM CONTROLS
+   ------------------------------------------------------------- */
 [data-testid="stSidebar"] {{
     background-color: {sidebar_bg} !important;
     border-right: 1px solid {border_color} !important;
 }}
 
-/* Tab Styling */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] h4,
+[data-testid="stSidebar"] h5,
+[data-testid="stSidebar"] h6,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] div {{
+    color: {text_primary} !important;
+}}
+
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] p,
+[data-testid="stSidebar"] small {{
+    color: {text_secondary} !important;
+    opacity: 0.9 !important;
+}}
+
+/* Inputs, Text Inputs, and Selectboxes in Sidebar and Main */
+.stTextInput input,
+[data-testid="stSidebar"] input {{
+    background-color: {input_bg} !important;
+    color: {input_text} !important;
+    border: 1px solid {input_border} !important;
+    border-radius: 8px !important;
+}}
+
+.stSelectbox [data-baseweb="select"],
+.stSelectbox [data-baseweb="select"] div,
+[data-testid="stSidebar"] [data-baseweb="select"],
+[data-testid="stSidebar"] [data-baseweb="select"] div {{
+    background-color: {input_bg} !important;
+    color: {input_text} !important;
+    border-color: {input_border} !important;
+}}
+
+/* Radio Buttons and Toggle Text */
+[data-testid="stSidebar"] [data-testid="stRadio"] label,
+[data-testid="stSidebar"] [data-testid="stToggle"] label {{
+    color: {text_primary} !important;
+    font-weight: 600 !important;
+}}
+
+/* -------------------------------------------------------------
+   TAB BAR CONTRAST
+   ------------------------------------------------------------- */
 .stTabs [data-baseweb="tab-list"] {{
     gap: 6px;
     background: {tab_bg};
@@ -366,12 +423,17 @@ p, span, label, div {{
 }}
 
 .stTabs [data-baseweb="tab"] {{
-    color: {text_secondary} !important;
-    font-weight: 600 !important;
-    font-size: 12.5px !important;
+    color: {tab_inactive_text} !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
     border-radius: 6px !important;
-    padding: 7px 14px !important;
+    padding: 8px 16px !important;
     border: none !important;
+    opacity: 1 !important;
+}}
+
+.stTabs [data-baseweb="tab"]:hover {{
+    color: {'#38BDF8' if is_dark else '#0284C7'} !important;
 }}
 
 .stTabs [aria-selected="true"] {{
