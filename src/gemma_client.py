@@ -37,7 +37,7 @@ class GemmaClient:
         return self.force_mock or self._client is None
 
     def list_available_models(self) -> List[str]:
-        """Queries the Gemini API for all available models on this API key."""
+        """Queries the Gemini API for all available models on this API key, prioritizing Gemma 4."""
         if self.is_mock_mode:
             return list(Config.SUPPORTED_MODELS)
 
@@ -48,13 +48,27 @@ class GemmaClient:
                 if name.startswith("models/"):
                     name = name[len("models/"):]
                 
-                # Filter for content generation models
                 actions = getattr(m, "supported_generation_methods", []) or []
                 if not actions or "generateContent" in actions:
                     discovered.append(name)
 
             if discovered:
-                return discovered
+                # Prioritize official Gemma 4 and Gemini flagship models at top
+                priority = [
+                    "gemma-4-26b-a4b-it",
+                    "gemma-4-31b-it",
+                    "gemini-2.5-flash",
+                    "gemini-2.0-flash",
+                    "gemma-2-27b-it",
+                ]
+                sorted_models = []
+                for p in priority:
+                    if p in discovered and p not in sorted_models:
+                        sorted_models.append(p)
+                for d in discovered:
+                    if d not in sorted_models:
+                        sorted_models.append(d)
+                return sorted_models
         except Exception:
             pass
 
@@ -80,15 +94,14 @@ class GemmaClient:
         except Exception as e:
             err_str = str(e)
             if "404" in err_str or "NOT_FOUND" in err_str:
-                # Query available models to help the user immediately
                 available = self.list_available_models()
-                rec = [m for m in available if "flash" in m or "gemma" in m][:4]
-                rec_str = ", ".join(rec) if rec else "gemini-2.5-flash, gemini-2.0-flash, gemma-2-27b-it"
-                return False, f"⚠️ Model '{self.model_name}' was not found on Gemini API (404 NOT_FOUND). Try selecting one of these from the dropdown: {rec_str}"
+                gemma_models = [m for m in available if "gemma-4" in m or "flash" in m][:3]
+                rec_str = ", ".join(gemma_models) if gemma_models else "gemma-4-26b-a4b-it, gemini-2.5-flash"
+                return False, f"⚠️ Model '{self.model_name}' was not found. Please select an active model from the dropdown: {rec_str}"
             elif "400" in err_str or "API_KEY_INVALID" in err_str:
                 return False, "❌ Invalid API Key. Please verify your Gemini API key in Google AI Studio."
             elif "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
-                return False, "⏳ Rate limit or quota exceeded on this API key. Try switching to the Simulator or wait a minute."
+                return False, "⏳ Rate limit or quota exceeded. Switch to the Simulator or wait a moment."
             return False, f"Connection failed for {self.model_name}: {type(e).__name__} - {err_str[:120]}"
 
     def generate(
@@ -149,7 +162,7 @@ class GemmaClient:
             latency = time.time() - start_time
             err_msg = str(e)
             if "404" in err_msg:
-                err_msg = f"Model '{self.model_name}' not found (404). Please switch to 'gemini-2.5-flash' or 'gemma-2-27b-it' in settings."
+                err_msg = f"Model '{self.model_name}' not found (404). Please switch to 'gemma-4-26b-a4b-it' or 'gemini-2.5-flash'."
             return {
                 "text": "",
                 "latency_seconds": round(latency, 3),

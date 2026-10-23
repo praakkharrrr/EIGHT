@@ -68,11 +68,14 @@ if "last_connectivity_status" not in st.session_state:
 if "available_models" not in st.session_state:
     st.session_state.available_models = list(Config.SUPPORTED_MODELS)
 
+if "selected_model_index" not in st.session_state:
+    st.session_state.selected_model_index = 0
+
 # ---------------------------------------------------------
 # SIDEBAR: Engine Settings & Fast Batch Runner
 # ---------------------------------------------------------
 with st.sidebar:
-    st.html(f"""<div style="display: flex; align-items: center; gap: 14px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+    st.html(f"""<div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">
         {BRAND_SVG}
         <div>
             <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.02em;">EIGHT</div>
@@ -81,40 +84,42 @@ with st.sidebar:
     </div>""")
     
     st.markdown("##### ⚙️ Engine Settings")
-    st.caption("Connect your Gemini API key or use the built-in offline simulator.")
+    st.caption("Target model and credentials.")
     
-    # Model dropdown with clear labels and active models first
+    # Prioritized model list
     model_options = [
+        "gemma-4-26b-a4b-it",
+        "gemma-4-31b-it",
         "gemini-2.5-flash",
         "gemini-2.0-flash",
-        "gemma-2-27b-it",
-        "gemma-2-9b-it",
         "gemini-1.5-flash",
-        "gemma-4"
     ]
-    # Ensure any discovered models are included
+    # Append any models discovered from the user's key
     for m in st.session_state.available_models:
         if m not in model_options:
             model_options.append(m)
 
+    # Safe index
+    curr_idx = min(st.session_state.selected_model_index, len(model_options) - 1)
+
     selected_model = st.selectbox(
         "Model Identifier",
         options=model_options,
-        index=0,
-        help="Select a model supported on your API key. 'gemini-2.5-flash' and 'gemma-2-27b-it' are verified active endpoints."
+        index=curr_idx,
+        help="Target model for Baseline, Agent A, Agent B, and Gemma 4 Evaluator."
     )
     
     runtime_api_key = st.text_input(
-        "Gemini API Key",
+        "Gemini / Gemma API Key",
         value=Config.API_KEY or "",
         type="password",
-        help="Paste your API key from Google AI Studio. Stored in memory only."
+        help="Stored in session memory only. Never logged or committed."
     )
     
     use_mock = st.toggle(
         "Use Offline Simulator",
         value=not Config.is_api_configured(runtime_api_key),
-        help="Simulates realistic edge cases and evaluation verdicts without consuming API quotas."
+        help="Runs realistic simulations of agent pitfalls and evaluator verdicts without consuming API quotas."
     )
     
     client = GemmaClient(
@@ -123,18 +128,22 @@ with st.sidebar:
         force_mock=use_mock
     )
     
-    col_ping, col_discover = st.columns([1, 1])
-    with col_ping:
-        if st.button("📡 Ping API", use_container_width=True):
-            with st.spinner("Connecting..."):
-                success, msg = client.test_connectivity()
-                st.session_state.last_connectivity_status = (success, msg)
-    with col_discover:
-        if st.button("🔍 Find Models", use_container_width=True):
-            with st.spinner("Discovering models..."):
-                discovered = client.list_available_models()
-                st.session_state.available_models = discovered
-                st.success(f"Discovered {len(discovered)} models on your API key!")
+    # Full-width clean buttons to prevent text truncation
+    if st.button("📡 Test Connection", use_container_width=True):
+        with st.spinner("Connecting..."):
+            success, msg = client.test_connectivity()
+            st.session_state.last_connectivity_status = (success, msg)
+            st.rerun()
+
+    if st.button("🔍 Auto-Detect Models on Key", use_container_width=True):
+        with st.spinner("Discovering models on your key..."):
+            discovered = client.list_available_models()
+            st.session_state.available_models = discovered
+            # Auto-select Gemma 4 if found!
+            if "gemma-4-26b-a4b-it" in discovered:
+                st.session_state.selected_model_index = discovered.index("gemma-4-26b-a4b-it")
+            st.session_state.last_connectivity_status = (True, f"Discovered {len(discovered)} models! Auto-selected official Gemma 4.")
+            st.rerun()
                 
     if st.session_state.last_connectivity_status:
         success, msg = st.session_state.last_connectivity_status
@@ -144,7 +153,7 @@ with st.sidebar:
             st.warning(msg)
 
     st.markdown("---")
-    st.markdown("##### 🚀 Batch Crash-Test")
+    st.markdown("##### 🚀 Fast Batch Evaluation")
     if st.button("▶ Run All 8 Benchmarks", use_container_width=True, type="primary"):
         with st.status("Crash-testing all 8 benchmarks...", expanded=True) as status_box:
             progress_bar = st.progress(0)
@@ -184,7 +193,7 @@ with st.sidebar:
         st.session_state.evaluation_results.clear()
         st.rerun()
 
-    st.html("""<div style="font-size: 11px; opacity: 0.6; margin-top: 30px; text-align: center;">
+    st.html("""<div style="font-size: 11px; opacity: 0.6; margin-top: 24px; text-align: center;">
         EIGHT — AI Crash-Test Lab v1.0<br>
         Hackathon: Best Use of Gemma 4
     </div>""")
@@ -199,7 +208,7 @@ if client.is_mock_mode:
 elif is_connected_live:
     mode_pill = f'<span class="badge-real-api"><span class="pulse-dot-green"></span>LIVE: {selected_model}</span>'
 else:
-    mode_pill = f'<span class="badge-mock"><span class="pulse-dot-amber"></span>API SETUP: {selected_model}</span>'
+    mode_pill = f'<span class="badge-mock"><span class="pulse-dot-amber"></span>API READY: {selected_model}</span>'
 
 st.html(f"""<div class="eight-header">
     {BRAND_SVG}
