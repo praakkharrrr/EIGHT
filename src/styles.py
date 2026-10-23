@@ -62,23 +62,75 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* -------------------------------------------------------------
-   TOP FLOATING FROSTED GLASS CAPSULE NAV
+   TOP FLOATING FROSTED GLASS CAPSULE NAV (Interactive)
    ------------------------------------------------------------- */
-.glass-nav-capsule {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 24px;
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
-    border: 1.5px solid rgba(255, 255, 255, 0.9);
-    border-radius: 9999px;
+.st-key-glass_capsule_navbar_container,
+[data-testid="stVerticalBlock"]:has(> div > .st-key-glass_capsule_navbar_container),
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-glass_capsule_navbar_container) {
+    background: rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(28px) !important;
+    -webkit-backdrop-filter: blur(28px) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+    border-radius: 9999px !important;
+    padding: 6px 20px !important;
     box-shadow: 
-        0 20px 40px rgba(0, 0, 0, 0.04),
-        inset 0 1px 2px rgba(255, 255, 255, 1);
-    margin: 10px auto 30px auto;
-    max-width: 900px;
+        0 16px 36px rgba(0, 0, 0, 0.04),
+        inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+    margin: 6px auto 20px auto !important;
+    max-width: 1120px !important;
+}
+
+/* Style st.pills inside the top floating navbar */
+[data-testid="stPills"] {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 4px !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+[data-testid="stPills"] > div {
+    display: flex !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    background: transparent !important;
+}
+
+[data-testid="stPills"] button {
+    background: transparent !important;
+    color: #475569 !important;
+    border: none !important;
+    border-radius: 9999px !important;
+    padding: 7px 15px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    transition: all 0.15s ease !important;
+    box-shadow: none !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+}
+
+[data-testid="stPills"] button:hover {
+    color: #0F172A !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+}
+
+[data-testid="stPills"] button[aria-checked="true"],
+[data-testid="stPills"] button[aria-selected="true"],
+[data-testid="stPills"] button[data-selected="true"] {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25) !important;
+}
+
+[data-testid="stPills"] button[aria-checked="true"] *,
+[data-testid="stPills"] button[aria-selected="true"] *,
+[data-testid="stPills"] button[data-selected="true"] * {
+    color: #FFFFFF !important;
 }
 
 .glass-nav-brand {

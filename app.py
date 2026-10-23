@@ -31,6 +31,20 @@ st.set_page_config(
 # Inject Liquid Frosted Glass Aurora UI styles (safe rendering with zero icon breakage)
 st.html(FROSTED_GLASS_CSS)
 
+# Navigation Options
+NAV_OPTIONS = [
+    "Overview",
+    "Evaluation Lab",
+    "Agent Arena",
+    "Evaluator Report",
+    "Verification Center",
+    "Reliability Analytics",
+    "Failure Inspector"
+]
+
+if "active_nav" not in st.session_state:
+    st.session_state.active_nav = "Overview"
+
 # Initialize Benchmark Manager
 benchmark_manager = BenchmarkManager()
 tasks = benchmark_manager.get_all_tasks()
@@ -168,7 +182,7 @@ with st.sidebar:
                     st.rerun()
 
     st.markdown("---")
-    st.markdown("##### 🚀 Fast Evaluation")
+    st.markdown("##### 🚀 Fast Batch Engine")
     
     col_quick, col_all = st.columns([1, 1])
     with col_quick:
@@ -194,6 +208,7 @@ with st.sidebar:
                 
             status_box.update(label=f"Done! {label_text} completed.", state="complete", expanded=False)
             st.success(f"Evaluated {len(tasks_to_run)} tasks successfully.")
+            st.session_state.active_nav = "Reliability Analytics"
             st.rerun()
 
     if st.button("🧹 Clear Results", use_container_width=True):
@@ -206,7 +221,7 @@ with st.sidebar:
     </div>""")
 
 # ---------------------------------------------------------
-# TOP FLOATING FROSTED GLASS CAPSULE NAV
+# TOP FLOATING FROSTED GLASS CAPSULE NAV (100% Interactive & Enabled)
 # ---------------------------------------------------------
 is_connected_live = (not client.is_mock_mode) and (st.session_state.last_connectivity_status and st.session_state.last_connectivity_status[0])
 
@@ -217,22 +232,30 @@ elif is_connected_live:
 else:
     mode_pill = f'<span class="badge-mock"><span class="pulse-dot-amber"></span>API READY: {selected_model}</span>'
 
-st.html(f"""<div class="glass-nav-capsule">
-    <div class="glass-nav-brand">
-        {BRAND_SVG}
-        <span class="glass-nav-title">EIGHT</span>
-    </div>
-    <div class="glass-nav-links">
-        <span>Overview</span>
-        <span>Evaluation Lab</span>
-        <span>Agent Arena</span>
-        <span>Verification</span>
-        <span>Analytics</span>
-    </div>
-    <div>
-        {mode_pill}
-    </div>
-</div>""")
+# Render Interactive Top Capsule Navbar
+with st.container(key="glass_capsule_navbar_container"):
+    c_brand, c_nav, c_status = st.columns([1.5, 7.0, 2.2], vertical_alignment="center")
+    with c_brand:
+        st.html(f"""<div style="display:flex; align-items:center; gap:8px;">
+            {BRAND_SVG}
+            <span style="font-weight:800; font-size:18px; color:#0F172A; letter-spacing:-0.03em;">EIGHT</span>
+        </div>""")
+    with c_nav:
+        curr_nav_idx = NAV_OPTIONS.index(st.session_state.active_nav) if st.session_state.active_nav in NAV_OPTIONS else 0
+        selected_nav = st.pills(
+            "Navigation",
+            options=NAV_OPTIONS,
+            default=NAV_OPTIONS[curr_nav_idx],
+            selection_mode="single",
+            required=True,
+            label_visibility="collapsed",
+            key="top_capsule_nav_pills"
+        )
+        if selected_nav and selected_nav != st.session_state.active_nav:
+            st.session_state.active_nav = selected_nav
+            st.rerun()
+    with c_status:
+        st.html(f"""<div style="display:flex; justify-content:flex-end;">{mode_pill}</div>""")
 
 # ---------------------------------------------------------
 # HERO DISPLAY FRAME (Kite AI Frosted Glass Style)
@@ -255,23 +278,49 @@ st.html(f"""<div class="hero-glass-frame">
     </div>
 </div>""")
 
-# ---------------------------------------------------------
-# NAVIGATION TABS (Liquid Glass Capsule Tabs)
-# ---------------------------------------------------------
-tab_overview, tab_lab, tab_arena, tab_eval, tab_verif, tab_analytics, tab_inspector = st.tabs([
-    "📊 Overview",
-    "🧪 Evaluation Lab",
-    "⚔️ Agent Arena",
-    "⚖️ Evaluator Report",
-    "🛡️ Verification Center",
-    "📈 Reliability Analytics",
-    "🔍 Failure Inspector",
-])
+# Hero Quick Action Pill Row (100% interactive)
+col_h1, col_h2, col_h3, col_h4 = st.columns(4)
+with col_h1:
+    if st.button("⚡ Quick 3-Task Test", use_container_width=True, key="hero_btn_quick"):
+        with st.status("Crash-testing Quick 3 Tasks in Parallel...", expanded=True) as status_box:
+            agent_runner = AgentRunner(client)
+            evaluator_runner = EvaluatorRunner(client)
+            for task in tasks[:3]:
+                eval_res = evaluate_single_task_fast(task, agent_runner, evaluator_runner)
+                st.session_state.evaluation_results[task.task_id] = eval_res
+            status_box.update(label="Quick 3-Task Test Complete!", state="complete")
+            st.session_state.active_nav = "Reliability Analytics"
+            st.rerun()
+with col_h2:
+    if st.button("▶ Run All 8 Benchmarks", use_container_width=True, type="primary", key="hero_btn_all"):
+        with st.status("Crash-testing all 8 benchmarks in parallel...", expanded=True) as status_box:
+            agent_runner = AgentRunner(client)
+            evaluator_runner = EvaluatorRunner(client)
+            for task in tasks:
+                eval_res = evaluate_single_task_fast(task, agent_runner, evaluator_runner)
+                st.session_state.evaluation_results[task.task_id] = eval_res
+            status_box.update(label="All 8 Benchmarks Complete!", state="complete")
+            st.session_state.active_nav = "Reliability Analytics"
+            st.rerun()
+with col_h3:
+    if st.button("🛡️ Open Verification Center", use_container_width=True, key="hero_btn_verif"):
+        st.session_state.active_nav = "Verification Center"
+        st.rerun()
+with col_h4:
+    if st.button("📈 View Reliability Analytics", use_container_width=True, key="hero_btn_analytics"):
+        st.session_state.active_nav = "Reliability Analytics"
+        st.rerun()
+
+st.markdown("<div style='margin-bottom: 24px;'></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB A: OVERVIEW
+# ACTIVE VIEW ROUTING BASED ON SELECTED CAPSULE PILL
 # ---------------------------------------------------------
-with tab_overview:
+
+# =========================================================
+# TAB A: OVERVIEW
+# =========================================================
+if st.session_state.active_nav == "Overview":
     st.markdown("""### 💡 The Big Question: Does Multi-Agent Collaboration Actually Help?
 Everyone assumes that having multiple AI agents talk to each other automatically produces better code.
 **EIGHT** was built to empirically test this assumption with deterministic proof.
@@ -346,10 +395,20 @@ We put AI-generated code through an **independent sandbox** to answer:
         Head to <b>Evaluation Lab</b> to run single tasks, or <b>Reliability Analytics</b> to view pass-rate charts and trade-offs.
     </div>""")
 
-# ---------------------------------------------------------
+    c_nav_act1, c_nav_act2 = st.columns(2)
+    with c_nav_act1:
+        if st.button("🧪 Open Evaluation Lab to Run a Test →", use_container_width=True, key="ov_to_lab"):
+            st.session_state.active_nav = "Evaluation Lab"
+            st.rerun()
+    with c_nav_act2:
+        if st.button("📈 View Full Reliability Scorecard →", use_container_width=True, key="ov_to_analytics"):
+            st.session_state.active_nav = "Reliability Analytics"
+            st.rerun()
+
+# =========================================================
 # TAB B: EVALUATION LAB
-# ---------------------------------------------------------
-with tab_lab:
+# =========================================================
+elif st.session_state.active_nav == "Evaluation Lab":
     st.markdown("### 🧪 Evaluation Lab")
     st.markdown("Select a benchmark challenge to inspect its specification, understand the trap, and trigger the crash test.")
     
@@ -390,7 +449,7 @@ with tab_lab:
 
     col_btn, col_info = st.columns([1, 2])
     with col_btn:
-        run_single = st.button("🚀 Crash-Test This Task", type="primary", use_container_width=True)
+        run_single = st.button("🚀 Crash-Test This Task", type="primary", use_container_width=True, key="lab_run_single")
     with col_info:
         st.caption("Executes Baseline, Agent A, and Agent B in parallel, followed by Gemma 4 arbitration and test assertions.")
 
@@ -433,10 +492,20 @@ with tab_lab:
             </div>
         </div>""")
 
-# ---------------------------------------------------------
+        c_lab_act1, c_lab_act2 = st.columns(2)
+        with c_lab_act1:
+            if st.button("⚔️ Inspect Code in Agent Arena →", use_container_width=True, key="lab_to_arena"):
+                st.session_state.active_nav = "Agent Arena"
+                st.rerun()
+        with c_lab_act2:
+            if st.button("🛡️ Inspect Ground-Truth Assertions →", use_container_width=True, key="lab_to_verif"):
+                st.session_state.active_nav = "Verification Center"
+                st.rerun()
+
+# =========================================================
 # TAB C: AGENT ARENA
-# ---------------------------------------------------------
-with tab_arena:
+# =========================================================
+elif st.session_state.active_nav == "Agent Arena":
     st.markdown("### ⚔️ Agent Arena: Candidate Solutions")
     st.markdown("Inspect code from the Baseline, Agent A, and Agent B side-by-side.")
     
@@ -502,10 +571,14 @@ with tab_arena:
         else:
             st.info("ℹ️ **Agreement:** Both Agent A and Agent B arrived at equivalent implementations.")
 
-# ---------------------------------------------------------
+        if st.button("⚖️ See How Gemma 4 Evaluated These Solutions →", use_container_width=True, key="arena_to_eval"):
+            st.session_state.active_nav = "Evaluator Report"
+            st.rerun()
+
+# =========================================================
 # TAB D: EVALUATOR REPORT
-# ---------------------------------------------------------
-with tab_eval:
+# =========================================================
+elif st.session_state.active_nav == "Evaluator Report":
     st.markdown("### ⚖️ Gemma 4 Evaluator: The AI Judge's Verdict")
     st.markdown("Gemma 4 compares both candidate solutions, detects flaws, and chooses a winner.")
     
@@ -555,10 +628,14 @@ with tab_eval:
             Head over to the <b>Verification Center</b> to see if this candidate actually passed deterministic test assertions.
         </div>""")
 
-# ---------------------------------------------------------
+        if st.button("🛡️ Check Deterministic Sandbox Results (Ground Truth) →", use_container_width=True, key="eval_to_verif"):
+            st.session_state.active_nav = "Verification Center"
+            st.rerun()
+
+# =========================================================
 # TAB E: VERIFICATION CENTER
-# ---------------------------------------------------------
-with tab_verif:
+# =========================================================
+elif st.session_state.active_nav == "Verification Center":
     st.markdown("### 🛡️ Verification Center: Ground-Truth Proof")
     st.markdown("This is the source of truth. We run real test cases against all generated code in an AST-audited sandbox.")
     
@@ -631,10 +708,20 @@ with tab_verif:
         df_tests = pd.DataFrame(test_rows)
         st.dataframe(df_tests, use_container_width=True, hide_index=True)
 
-# ---------------------------------------------------------
+        c_vf1, c_vf2 = st.columns(2)
+        with c_vf1:
+            if st.button("📈 View Full Reliability Scorecard →", use_container_width=True, key="verif_to_analytics"):
+                st.session_state.active_nav = "Reliability Analytics"
+                st.rerun()
+        with c_vf2:
+            if st.button("🔍 Open Failure Inspector to Audit Bugs →", use_container_width=True, key="verif_to_insp"):
+                st.session_state.active_nav = "Failure Inspector"
+                st.rerun()
+
+# =========================================================
 # TAB F: RELIABILITY ANALYTICS
-# ---------------------------------------------------------
-with tab_analytics:
+# =========================================================
+elif st.session_state.active_nav == "Reliability Analytics":
     st.markdown("### 📈 Reliability Analytics: The Hard Data")
     st.markdown("Empirical scorecard comparing Single-Agent vs Multi-Agent systems across all benchmarks.")
     
@@ -713,10 +800,14 @@ with tab_analytics:
                 <div style="font-size: 24px; font-weight: 800; color: #0F172A; margin-top: 4px;">{summary.total_tokens:,} tokens</div>
             </div>""")
 
-# ---------------------------------------------------------
+        if st.button("🔍 Open Failure Inspector to Audit Misjudgments →", use_container_width=True, key="analytics_to_insp"):
+            st.session_state.active_nav = "Failure Inspector"
+            st.rerun()
+
+# =========================================================
 # TAB G: FAILURE INSPECTOR
-# ---------------------------------------------------------
-with tab_inspector:
+# =========================================================
+elif st.session_state.active_nav == "Failure Inspector":
     st.markdown("### 🔍 Failure Inspector: Forensic Autopsy")
     st.markdown("Deep dive into bugs, missed edge cases, and why the model tripped.")
     
@@ -774,3 +865,7 @@ with tab_inspector:
                 *Corroborated by failed assertion traces in the deterministic sandbox.*
             </div>
         </div>""")
+
+        if st.button("🧪 Return to Evaluation Lab →", use_container_width=True, key="insp_to_lab"):
+            st.session_state.active_nav = "Evaluation Lab"
+            st.rerun()
