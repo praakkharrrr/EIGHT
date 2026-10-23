@@ -417,6 +417,7 @@ h1, h2, h3, h4, h5, h6 {
     border-right: 1.5px solid rgba(255, 255, 255, 0.8) !important;
 }
 
+/* Sidebar text elements */
 [data-testid="stSidebar"] h1,
 [data-testid="stSidebar"] h2,
 [data-testid="stSidebar"] h3,
@@ -424,9 +425,7 @@ h1, h2, h3, h4, h5, h6 {
 [data-testid="stSidebar"] h5,
 [data-testid="stSidebar"] h6,
 [data-testid="stSidebar"] label,
-[data-testid="stSidebar"] span,
-[data-testid="stSidebar"] p,
-[data-testid="stSidebar"] div {
+[data-testid="stSidebar"] .stMarkdown p {
     color: #0F172A !important;
 }
 
@@ -435,10 +434,20 @@ h1, h2, h3, h4, h5, h6 {
     color: #64748B !important;
 }
 
+/* Toggles & Checkboxes in Sidebar */
+[data-testid="stSidebar"] [data-testid="stCheckbox"] label,
+[data-testid="stSidebar"] [data-testid="stToggle"] label,
+[data-testid="stSidebar"] [data-testid="stCheckbox"] label p,
+[data-testid="stSidebar"] [data-testid="stToggle"] label p {
+    color: #0F172A !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+}
+
 /* Inputs & Form Controls */
 .stTextInput input,
 [data-testid="stSidebar"] input {
-    background: rgba(255, 255, 255, 0.9) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
     color: #0F172A !important;
     border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
     border-radius: 9999px !important;
@@ -447,32 +456,83 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stSelectbox [data-baseweb="select"],
-.stSelectbox [data-baseweb="select"] div,
+.stSelectbox [data-baseweb="select"] *,
 [data-testid="stSidebar"] [data-baseweb="select"],
-[data-testid="stSidebar"] [data-baseweb="select"] div {
-    background: rgba(255, 255, 255, 0.9) !important;
+[data-testid="stSidebar"] [data-baseweb="select"] * {
+    background: rgba(255, 255, 255, 0.95) !important;
     color: #0F172A !important;
-    border-radius: 12px !important;
-    border-color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Buttons: Capsule Pills */
-.stButton > button {
-    background: #0F172A !important;
+.stSelectbox [data-baseweb="select"],
+[data-testid="stSidebar"] [data-baseweb="select"] {
+    border-radius: 14px !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Buttons: Capsule Pills — Bright White High Contrast */
+.stButton > button,
+.stButton > button *,
+.stButton > button p,
+.stButton > button span,
+.stButton > button div,
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] .stButton > button *,
+[data-testid="stSidebar"] .stButton > button p,
+[data-testid="stSidebar"] .stButton > button span,
+[data-testid="stSidebar"] .stButton > button div {
     color: #FFFFFF !important;
     font-weight: 700 !important;
     font-size: 13px !important;
-    border: none !important;
-    border-radius: 9999px !important;
-    padding: 10px 22px !important;
-    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2) !important;
-    transition: all 0.2s ease !important;
+    line-height: 1.4 !important;
+    text-decoration: none !important;
 }
 
-.stButton > button:hover {
+.stButton > button,
+[data-testid="stSidebar"] .stButton > button {
+    background: #0F172A !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 9999px !important;
+    padding: 10px 20px !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25) !important;
+    transition: all 0.2s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.stButton > button:hover,
+[data-testid="stSidebar"] .stButton > button:hover {
     background: #1E293B !important;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.3) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35) !important;
     transform: translateY(-1px) !important;
+}
+
+.stButton > button:active,
+[data-testid="stSidebar"] .stButton > button:active {
+    transform: translateY(0px) !important;
+}
+
+/* Primary buttons */
+.stButton > button[kind="primary"],
+.stButton > button[kind="primary"] *,
+.stButton > button[kind="primary"] p,
+.stButton > button[kind="primary"] span,
+.stButton > button[kind="primary"] div,
+[data-testid="stSidebar"] .stButton > button[kind="primary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"] *,
+[data-testid="stSidebar"] .stButton > button[kind="primary"] p,
+[data-testid="stSidebar"] .stButton > button[kind="primary"] span,
+[data-testid="stSidebar"] .stButton > button[kind="primary"] div {
+    background: #0284C7 !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
+    background: #0369A1 !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Code block container */
