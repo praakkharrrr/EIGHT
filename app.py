@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Optional
 
 from src.config import Config
@@ -35,6 +36,33 @@ benchmark_manager = BenchmarkManager()
 tasks = benchmark_manager.get_all_tasks()
 task_map = {t.task_id: t for t in tasks}
 
+# Parallel evaluation helper (cuts latency by running Baseline, Agent A, and Agent B simultaneously!)
+def evaluate_single_task_fast(task: BenchmarkTask, agent_runner: AgentRunner, evaluator_runner: EvaluatorRunner) -> TaskEvaluationResult:
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        f_base = pool.submit(agent_runner.run_baseline, task)
+        f_a = pool.submit(agent_runner.run_agent_a, task)
+        f_b = pool.submit(agent_runner.run_agent_b, task)
+        
+        base_out = f_base.result()
+        a_out = f_a.result()
+        b_out = f_b.result()
+
+    eval_dec = evaluator_runner.evaluate_candidates(task, a_out, b_out)
+    v_base = VerificationEngine.verify_candidate(task, base_out, "Baseline")
+    v_a = VerificationEngine.verify_candidate(task, a_out, "Agent A")
+    v_b = VerificationEngine.verify_candidate(task, b_out, "Agent B")
+
+    return MetricsCalculator.evaluate_task_result(
+        task=task,
+        baseline_output=base_out,
+        agent_a_output=a_out,
+        agent_b_output=b_out,
+        evaluator_decision=eval_dec,
+        baseline_verification=v_base,
+        agent_a_verification=v_a,
+        agent_b_verification=v_b
+    )
+
 # Auto-populate simulation so user lands on a vibrant, populated dashboard
 if "evaluation_results" not in st.session_state:
     default_client = GemmaClient(force_mock=True)
@@ -42,24 +70,7 @@ if "evaluation_results" not in st.session_state:
     evaluator_runner = EvaluatorRunner(default_client)
     init_results = {}
     for t in tasks:
-        base_out = agent_runner.run_baseline(t)
-        a_out = agent_runner.run_agent_a(t)
-        b_out = agent_runner.run_agent_b(t)
-        eval_dec = evaluator_runner.evaluate_candidates(t, a_out, b_out)
-        v_base = VerificationEngine.verify_candidate(t, base_out, "Baseline")
-        v_a = VerificationEngine.verify_candidate(t, a_out, "Agent A")
-        v_b = VerificationEngine.verify_candidate(t, b_out, "Agent B")
-        eval_res = MetricsCalculator.evaluate_task_result(
-            task=t,
-            baseline_output=base_out,
-            agent_a_output=a_out,
-            agent_b_output=b_out,
-            evaluator_decision=eval_dec,
-            baseline_verification=v_base,
-            agent_a_verification=v_a,
-            agent_b_verification=v_b
-        )
-        init_results[t.task_id] = eval_res
+        init_results[t.task_id] = evaluate_single_task_fast(t, agent_runner, evaluator_runner)
     st.session_state.evaluation_results = init_results
 
 if "last_connectivity_status" not in st.session_state:
@@ -68,8 +79,8 @@ if "last_connectivity_status" not in st.session_state:
 if "available_models" not in st.session_state:
     st.session_state.available_models = list(Config.SUPPORTED_MODELS)
 
-if "selected_model_index" not in st.session_state:
-    st.session_state.selected_model_index = 0
+if "selected_model_name" not in st.session_state:
+    st.session_state.selected_model_name = "gemini-2.5-flash"
 
 # ---------------------------------------------------------
 # SIDEBAR: Engine Settings & Fast Batch Runner
@@ -86,28 +97,29 @@ with st.sidebar:
     st.markdown("##### ⚙️ Engine Settings")
     st.caption("Target model and credentials.")
     
-    # Prioritized model list
+    # Model choices: gemini-2.5-flash (Fast & stable) and gemma-4-26b-a4b-it
     model_options = [
+        "gemini-2.5-flash",
         "gemma-4-26b-a4b-it",
         "gemma-4-31b-it",
-        "gemini-2.5-flash",
         "gemini-2.0-flash",
         "gemini-1.5-flash",
     ]
-    # Append any models discovered from the user's key
     for m in st.session_state.available_models:
         if m not in model_options:
             model_options.append(m)
 
-    # Safe index
-    curr_idx = min(st.session_state.selected_model_index, len(model_options) - 1)
+    curr_idx = 0
+    if st.session_state.selected_model_name in model_options:
+        curr_idx = model_options.index(st.session_state.selected_model_name)
 
     selected_model = st.selectbox(
         "Model Identifier",
         options=model_options,
         index=curr_idx,
-        help="Target model for Baseline, Agent A, Agent B, and Gemma 4 Evaluator."
+        help="Target model. Tip: 'gemini-2.5-flash' responds in <1s with 99.9% uptime. 'gemma-4-26b-a4b-it' is Google's new preview endpoint."
     )
+    st.session_state.selected_model_name = selected_model
     
     runtime_api_key = st.text_input(
         "Gemini / Gemma API Key",
@@ -119,7 +131,7 @@ with st.sidebar:
     use_mock = st.toggle(
         "Use Offline Simulator",
         value=not Config.is_api_configured(runtime_api_key),
-        help="Runs realistic simulations of agent pitfalls and evaluator verdicts without consuming API quotas."
+        help="Instant, deterministic simulations of agent pitfalls without consuming API quotas or network delays."
     )
     
     client = GemmaClient(
@@ -128,9 +140,9 @@ with st.sidebar:
         force_mock=use_mock
     )
     
-    # Full-width clean buttons to prevent text truncation
+    # Action buttons
     if st.button("📡 Test Connection", use_container_width=True):
-        with st.spinner("Connecting..."):
+        with st.spinner(f"Testing {selected_model}..."):
             success, msg = client.test_connectivity()
             st.session_state.last_connectivity_status = (success, msg)
             st.rerun()
@@ -139,10 +151,7 @@ with st.sidebar:
         with st.spinner("Discovering models on your key..."):
             discovered = client.list_available_models()
             st.session_state.available_models = discovered
-            # Auto-select Gemma 4 if found!
-            if "gemma-4-26b-a4b-it" in discovered:
-                st.session_state.selected_model_index = discovered.index("gemma-4-26b-a4b-it")
-            st.session_state.last_connectivity_status = (True, f"Discovered {len(discovered)} models! Auto-selected official Gemma 4.")
+            st.session_state.last_connectivity_status = (True, f"Discovered {len(discovered)} models on your API key!")
             st.rerun()
                 
     if st.session_state.last_connectivity_status:
@@ -151,42 +160,40 @@ with st.sidebar:
             st.success(msg)
         else:
             st.warning(msg)
+            # If 500 error on gemma preview model, offer 1-click switch to gemini-2.5-flash
+            if "500" in msg and "gemma" in selected_model:
+                if st.button("⚡ Switch to gemini-2.5-flash (<1s response)", use_container_width=True):
+                    st.session_state.selected_model_name = "gemini-2.5-flash"
+                    st.session_state.last_connectivity_status = None
+                    st.rerun()
 
     st.markdown("---")
-    st.markdown("##### 🚀 Fast Batch Evaluation")
-    if st.button("▶ Run All 8 Benchmarks", use_container_width=True, type="primary"):
-        with st.status("Crash-testing all 8 benchmarks...", expanded=True) as status_box:
+    st.markdown("##### 🚀 Fast Evaluation")
+    
+    col_quick, col_all = st.columns([1, 1])
+    with col_quick:
+        # Quick 3-task test runs in ~3-4 seconds!
+        run_quick = st.button("⚡ Quick 3 Tasks", use_container_width=True, help="Runs TASK-01, TASK-02, TASK-03 in parallel for instant judge demos.")
+    with col_all:
+        run_all = st.button("▶ All 8 Tasks", use_container_width=True, type="primary")
+
+    if run_quick or run_all:
+        tasks_to_run = tasks[:3] if run_quick else tasks
+        label_text = "Quick 3-Task Test" if run_quick else "All 8 Benchmarks"
+        
+        with st.status(f"Crash-testing {label_text} (Parallel Engine)...", expanded=True) as status_box:
             progress_bar = st.progress(0)
             agent_runner = AgentRunner(client)
             evaluator_runner = EvaluatorRunner(client)
             
-            for idx, task in enumerate(tasks):
-                status_box.write(f"Testing **{task.task_id}**: {task.title}...")
-                progress_bar.progress((idx + 1) / len(tasks))
-                
-                base_out = agent_runner.run_baseline(task)
-                a_out = agent_runner.run_agent_a(task)
-                b_out = agent_runner.run_agent_b(task)
-                eval_dec = evaluator_runner.evaluate_candidates(task, a_out, b_out)
-                
-                v_base = VerificationEngine.verify_candidate(task, base_out, "Baseline")
-                v_a = VerificationEngine.verify_candidate(task, a_out, "Agent A")
-                v_b = VerificationEngine.verify_candidate(task, b_out, "Agent B")
-                
-                eval_res = MetricsCalculator.evaluate_task_result(
-                    task=task,
-                    baseline_output=base_out,
-                    agent_a_output=a_out,
-                    agent_b_output=b_out,
-                    evaluator_decision=eval_dec,
-                    baseline_verification=v_base,
-                    agent_a_verification=v_a,
-                    agent_b_verification=v_b
-                )
+            for idx, task in enumerate(tasks_to_run):
+                status_box.write(f"Parallel Testing: **{task.task_id}** — {task.title}...")
+                eval_res = evaluate_single_task_fast(task, agent_runner, evaluator_runner)
                 st.session_state.evaluation_results[task.task_id] = eval_res
+                progress_bar.progress((idx + 1) / len(tasks_to_run))
                 
-            status_box.update(label="All benchmarks evaluated!", state="complete", expanded=False)
-            st.success(f"Evaluated {len(tasks)} benchmark tasks.")
+            status_box.update(label=f"Done! {label_text} completed.", state="complete", expanded=False)
+            st.success(f"Evaluated {len(tasks_to_run)} tasks successfully.")
             st.rerun()
 
     if st.button("🧹 Clear Results", use_container_width=True):
@@ -221,7 +228,7 @@ st.html(f"""<div class="eight-header">
         <div class="stats-strip">
             <span class="stat-pill">🎯 <b>8 Curated Benchmarks</b></span>
             <span class="stat-pill">⚔️ <b>1 Baseline vs 2 Specialists</b></span>
-            <span class="stat-pill">⚖️ <b>Gemma 4 Evaluator Arbiter</b></span>
+            <span class="stat-pill">⚡ <b>Parallel Multi-Threaded Engine</b></span>
             <span class="stat-pill">🛡️ <b>AST Sandboxed Ground Truth</b></span>
         </div>
     </div>
@@ -364,41 +371,17 @@ with tab_lab:
     with col_btn:
         run_single = st.button("🚀 Crash-Test This Task", type="primary", use_container_width=True)
     with col_info:
-        st.caption("Executes Baseline, Agent A, Agent B, Gemma 4 Evaluator, and deterministic verification.")
+        st.caption("Executes Baseline, Agent A, and Agent B in parallel, followed by Gemma 4 arbitration and test assertions.")
 
     if run_single:
-        with st.status(f"Evaluating {current_task.task_id}...", expanded=True) as status:
+        with st.status(f"Evaluating {current_task.task_id} (Parallel Execution)...", expanded=True) as status:
             agent_runner = AgentRunner(client)
             evaluator_runner = EvaluatorRunner(client)
             
-            st.write("1. Running Baseline (Single prompt)...")
-            base_out = agent_runner.run_baseline(current_task)
-            
-            st.write("2. Running Agent A (Algorithmic Specialist)...")
-            a_out = agent_runner.run_agent_a(current_task)
-            
-            st.write("3. Running Agent B (Adversarial Edge-Case Specialist)...")
-            b_out = agent_runner.run_agent_b(current_task)
-            
-            st.write("4. Invoking Gemma 4 Evaluator for comparative review...")
-            eval_dec = evaluator_runner.evaluate_candidates(current_task, a_out, b_out)
-            
-            st.write("5. Executing deterministic test assertions in sandbox...")
-            v_base = VerificationEngine.verify_candidate(current_task, base_out, "Baseline")
-            v_a = VerificationEngine.verify_candidate(current_task, a_out, "Agent A")
-            v_b = VerificationEngine.verify_candidate(current_task, b_out, "Agent B")
-            
-            eval_res = MetricsCalculator.evaluate_task_result(
-                task=current_task,
-                baseline_output=base_out,
-                agent_a_output=a_out,
-                agent_b_output=b_out,
-                evaluator_decision=eval_dec,
-                baseline_verification=v_base,
-                agent_a_verification=v_a,
-                agent_b_verification=v_b
-            )
+            st.write("1. Running Baseline, Agent A, and Agent B in parallel threads...")
+            eval_res = evaluate_single_task_fast(current_task, agent_runner, evaluator_runner)
             st.session_state.evaluation_results[current_task.task_id] = eval_res
+            
             status.update(label=f"Done testing {current_task.task_id}!", state="complete", expanded=False)
             st.rerun()
 

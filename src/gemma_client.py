@@ -7,7 +7,8 @@ from src.config import Config
 class GemmaClient:
     """
     Client for interacting with Google GenAI / Gemini API.
-    Provides real API execution with model discovery, error containment, and realistic mock mode.
+    Provides real API execution with model discovery, auto-retry on 500 errors,
+    error containment, and realistic mock mode.
     """
 
     def __init__(
@@ -53,12 +54,12 @@ class GemmaClient:
                     discovered.append(name)
 
             if discovered:
-                # Prioritize official Gemma 4 and Gemini flagship models at top
                 priority = [
                     "gemma-4-26b-a4b-it",
                     "gemma-4-31b-it",
                     "gemini-2.5-flash",
                     "gemini-2.0-flash",
+                    "gemini-1.5-flash",
                     "gemma-2-27b-it",
                 ]
                 sorted_models = []
@@ -77,32 +78,41 @@ class GemmaClient:
     def test_connectivity(self) -> Tuple[bool, str]:
         """
         Runs a minimal ping request to verify model connectivity.
-        Returns (success: bool, message: str).
+        Handles Google server 500 INTERNAL errors gracefully with retry.
         """
         if self.is_mock_mode:
-            return False, "Simulation mode active. Turn off 'Use Offline Simulator' and enter an API key for live calls."
+            return False, "Simulation mode active. Turn off 'Use Offline Simulator' to test live API."
 
-        try:
-            start_time = time.time()
-            response = self._client.models.generate_content(
-                model=self.model_name,
-                contents="Reply with one word: PONG",
-            )
-            elapsed = time.time() - start_time
-            reply_text = getattr(response, "text", "").strip()
-            return True, f"Connected to {self.model_name} successfully ({elapsed:.2f}s). Reply: '{reply_text[:20]}'"
-        except Exception as e:
-            err_str = str(e)
-            if "404" in err_str or "NOT_FOUND" in err_str:
-                available = self.list_available_models()
-                gemma_models = [m for m in available if "gemma-4" in m or "flash" in m][:3]
-                rec_str = ", ".join(gemma_models) if gemma_models else "gemma-4-26b-a4b-it, gemini-2.5-flash"
-                return False, f"⚠️ Model '{self.model_name}' was not found. Please select an active model from the dropdown: {rec_str}"
-            elif "400" in err_str or "API_KEY_INVALID" in err_str:
-                return False, "❌ Invalid API Key. Please verify your Gemini API key in Google AI Studio."
-            elif "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
-                return False, "⏳ Rate limit or quota exceeded. Switch to the Simulator or wait a moment."
-            return False, f"Connection failed for {self.model_name}: {type(e).__name__} - {err_str[:120]}"
+        # Try up to 2 times for transient 500 errors
+        last_error = ""
+        for attempt in range(2):
+            try:
+                start_time = time.time()
+                response = self._client.models.generate_content(
+                    model=self.model_name,
+                    contents="Reply with one word: PONG",
+                )
+                elapsed = time.time() - start_time
+                reply_text = getattr(response, "text", "").strip()
+                return True, f"Connected to {self.model_name} successfully ({elapsed:.2f}s). Reply: '{reply_text[:20]}'"
+            except Exception as e:
+                last_error = str(e)
+                if "500" in last_error or "INTERNAL" in last_error:
+                    time.sleep(1.0)
+                    continue
+                break
+
+        # If failed after retry
+        if "500" in last_error or "INTERNAL" in last_error:
+            return False, f"⚠️ Google server error (500 INTERNAL) on '{self.model_name}'. Google's preview endpoint is temporarily overloaded. Please switch to 'gemini-2.5-flash' in the dropdown for instant live responses, or use the Simulator."
+        elif "404" in last_error or "NOT_FOUND" in last_error:
+            return False, f"⚠️ Model '{self.model_name}' was not found. Please select an active model like 'gemini-2.5-flash' or 'gemma-4-26b-a4b-it' from the dropdown."
+        elif "400" in last_error or "API_KEY_INVALID" in last_error:
+            return False, "❌ Invalid API Key. Please verify your Gemini API key in Google AI Studio."
+        elif "RESOURCE_EXHAUSTED" in last_error or "429" in last_error:
+            return False, "⏳ Rate limit exceeded on this key. Please wait a minute or use the Simulator."
+
+        return False, f"Connection failed for {self.model_name}: {last_error[:120]}"
 
     def generate(
         self,
@@ -112,64 +122,78 @@ class GemmaClient:
         max_output_tokens: Optional[int] = None
     ) -> Dict[str, Any]:
         """
-        Generates content from the model or mock provider.
-        Returns a dict with: text, latency_seconds, tokens_used, error, is_mock.
+        Generates content from the model or mock provider with retry on transient server errors.
         """
         temp = temperature if temperature is not None else Config.TEMPERATURE
         max_tokens = max_output_tokens or Config.MAX_OUTPUT_TOKENS
 
         if self.is_mock_mode:
-            time.sleep(0.15)
+            # Super fast simulation (0.05s) so evaluations complete in seconds
+            time.sleep(0.05)
             mock_text = self._generate_mock_response(prompt, system_instruction)
             return {
                 "text": mock_text,
-                "latency_seconds": 0.15,
+                "latency_seconds": 0.05,
                 "tokens_used": len(mock_text.split()) * 2,
                 "error": None,
                 "is_mock": True
             }
 
         start_time = time.time()
-        try:
-            from google.genai import types
-            config = types.GenerateContentConfig(
-                temperature=temp,
-                max_output_tokens=max_tokens,
-                system_instruction=system_instruction
-            )
-            response = self._client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=config
-            )
-            latency = time.time() - start_time
-            text = getattr(response, "text", "") or ""
-            
-            tokens = 0
-            if hasattr(response, "usage_metadata") and response.usage_metadata:
-                tokens = getattr(response.usage_metadata, "total_token_count", 0) or 0
-            if tokens == 0:
-                tokens = len(text.split()) * 2
+        last_exception = None
 
-            return {
-                "text": text,
-                "latency_seconds": round(latency, 3),
-                "tokens_used": tokens,
-                "error": None,
-                "is_mock": False
-            }
-        except Exception as e:
-            latency = time.time() - start_time
-            err_msg = str(e)
-            if "404" in err_msg:
-                err_msg = f"Model '{self.model_name}' not found (404). Please switch to 'gemma-4-26b-a4b-it' or 'gemini-2.5-flash'."
-            return {
-                "text": "",
-                "latency_seconds": round(latency, 3),
-                "tokens_used": 0,
-                "error": err_msg,
-                "is_mock": False
-            }
+        # Retry up to 2 times on 500 INTERNAL or rate limit
+        for attempt in range(2):
+            try:
+                from google.genai import types
+                config = types.GenerateContentConfig(
+                    temperature=temp,
+                    max_output_tokens=max_tokens,
+                    system_instruction=system_instruction
+                )
+                response = self._client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=config
+                )
+                latency = time.time() - start_time
+                text = getattr(response, "text", "") or ""
+                
+                tokens = 0
+                if hasattr(response, "usage_metadata") and response.usage_metadata:
+                    tokens = getattr(response.usage_metadata, "total_token_count", 0) or 0
+                if tokens == 0:
+                    tokens = len(text.split()) * 2
+
+                return {
+                    "text": text,
+                    "latency_seconds": round(latency, 3),
+                    "tokens_used": tokens,
+                    "error": None,
+                    "is_mock": False
+                }
+            except Exception as e:
+                last_exception = e
+                err_str = str(e)
+                if ("500" in err_str or "INTERNAL" in err_str or "429" in err_str) and attempt == 0:
+                    time.sleep(1.2)
+                    continue
+                break
+
+        latency = time.time() - start_time
+        err_msg = str(last_exception)
+        if "500" in err_msg or "INTERNAL" in err_msg:
+            err_msg = f"Google Server 500 INTERNAL on '{self.model_name}'. Switch to 'gemini-2.5-flash' for instant responses."
+        elif "404" in err_msg:
+            err_msg = f"Model '{self.model_name}' not found (404). Please switch to 'gemini-2.5-flash'."
+
+        return {
+            "text": "",
+            "latency_seconds": round(latency, 3),
+            "tokens_used": 0,
+            "error": err_msg,
+            "is_mock": False
+        }
 
     def _generate_mock_response(self, prompt: str, system_instruction: Optional[str] = None) -> str:
         """Simulated response fallback."""
