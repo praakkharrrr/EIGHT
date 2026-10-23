@@ -478,70 +478,126 @@ h1, h2, h3, h4, h5, h6 {
     border: 1.5px solid rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Buttons: Capsule Pills — Bright White High Contrast */
-.stButton > button,
-.stButton > button *,
-.stButton > button p,
-.stButton > button span,
-.stButton > button div,
-[data-testid="stSidebar"] .stButton > button,
-[data-testid="stSidebar"] .stButton > button *,
-[data-testid="stSidebar"] .stButton > button p,
-[data-testid="stSidebar"] .stButton > button span,
-[data-testid="stSidebar"] .stButton > button div {
-    color: #FFFFFF !important;
-    font-weight: 700 !important;
-    font-size: 13px !important;
-    line-height: 1.4 !important;
+/* -------------------------------------------------------------
+   KITE AI FROSTED GLASS CAPSULE BUTTONS
+   ------------------------------------------------------------- */
+
+/* Completely eliminate browser / Streamlit inner focus rectangles and outline borders */
+button,
+button:focus,
+button:focus-visible,
+button:active,
+button *,
+button div,
+button p,
+button span,
+[data-testid^="stBaseButton"],
+[data-testid^="stBaseButton"] *,
+div[data-testid="stMarkdownContainer"],
+div[data-testid="stMarkdownContainer"] * {
+    outline: none !important;
     text-decoration: none !important;
+    border: none;
 }
 
+/* Secondary / Default Buttons: Pure Frosted White Capsule Pill */
 .stButton > button,
-[data-testid="stSidebar"] .stButton > button {
-    background: #0F172A !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+button[data-testid="stBaseButton-secondary"],
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.95) !important;
+    color: #0F172A !important;
     border-radius: 9999px !important;
-    padding: 10px 20px !important;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.25) !important;
-    transition: all 0.2s ease !important;
+    padding: 10px 22px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    box-shadow: 
+        0 4px 14px rgba(0, 0, 0, 0.04),
+        inset 0 1px 1.5px rgba(255, 255, 255, 1) !important;
+    transition: all 0.18s ease !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+}
+
+.stButton > button *,
+button[data-testid="stBaseButton-secondary"] *,
+[data-testid="stSidebar"] .stButton > button *,
+[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"] * {
+    color: #0F172A !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
 }
 
 .stButton > button:hover,
-[data-testid="stSidebar"] .stButton > button:hover {
+button[data-testid="stBaseButton-secondary"]:hover,
+[data-testid="stSidebar"] .stButton > button:hover,
+[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:hover {
+    background: #FFFFFF !important;
+    border-color: #FFFFFF !important;
+    color: #0F172A !important;
+    box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.08),
+        inset 0 1px 2px rgba(255, 255, 255, 1) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Primary Action Buttons: Solid Obsidian Charcoal Capsule Pill */
+.stButton > button[kind="primary"],
+button[data-testid="stBaseButton-primary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"],
+[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {
+    background: #0F172A !important;
+    border: 1.5px solid #0F172A !important;
+    color: #FFFFFF !important;
+    border-radius: 9999px !important;
+    padding: 10px 22px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    box-shadow: 
+        0 6px 18px rgba(15, 23, 42, 0.22),
+        inset 0 1px 1.5px rgba(255, 255, 255, 0.15) !important;
+    transition: all 0.18s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+}
+
+.stButton > button[kind="primary"] *,
+button[data-testid="stBaseButton-primary"] *,
+[data-testid="stSidebar"] .stButton > button[kind="primary"] *,
+[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] * {
+    color: #FFFFFF !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 13.5px !important;
+}
+
+.stButton > button[kind="primary"]:hover,
+button[data-testid="stBaseButton-primary"]:hover,
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
+[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"]:hover {
     background: #1E293B !important;
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.35) !important;
+    border-color: #1E293B !important;
+    box-shadow: 
+        0 8px 26px rgba(15, 23, 42, 0.32),
+        inset 0 1px 2px rgba(255, 255, 255, 0.2) !important;
     transform: translateY(-1px) !important;
 }
 
 .stButton > button:active,
-[data-testid="stSidebar"] .stButton > button:active {
+button[data-testid^="stBaseButton"]:active {
     transform: translateY(0px) !important;
-}
-
-/* Primary buttons */
-.stButton > button[kind="primary"],
-.stButton > button[kind="primary"] *,
-.stButton > button[kind="primary"] p,
-.stButton > button[kind="primary"] span,
-.stButton > button[kind="primary"] div,
-[data-testid="stSidebar"] .stButton > button[kind="primary"],
-[data-testid="stSidebar"] .stButton > button[kind="primary"] *,
-[data-testid="stSidebar"] .stButton > button[kind="primary"] p,
-[data-testid="stSidebar"] .stButton > button[kind="primary"] span,
-[data-testid="stSidebar"] .stButton > button[kind="primary"] div {
-    background: #0284C7 !important;
-    color: #FFFFFF !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-}
-
-.stButton > button[kind="primary"]:hover,
-[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover {
-    background: #0369A1 !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Code block container */

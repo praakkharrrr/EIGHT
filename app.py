@@ -179,12 +179,9 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("##### 🚀 Fast Batch Engine")
     
-    col_quick, col_all = st.columns([1, 1])
-    with col_quick:
-        # Quick 3-task test runs in ~3-4 seconds!
-        run_quick = st.button("⚡ Quick 3 Tasks", use_container_width=True, help="Runs TASK-01, TASK-02, TASK-03 in parallel for instant judge demos.")
-    with col_all:
-        run_all = st.button("▶ All 8 Tasks", use_container_width=True, type="primary")
+    # Vertically stacked full-width capsule buttons for zero text truncation
+    run_quick = st.button("⚡ Quick 3-Task Test", use_container_width=True, help="Runs TASK-01, TASK-02, TASK-03 in parallel for instant judge demos.")
+    run_all = st.button("▶ Run All 8 Benchmarks", use_container_width=True, type="primary")
 
     if run_quick or run_all:
         tasks_to_run = tasks[:3] if run_quick else tasks
