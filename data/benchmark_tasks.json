@@ -1,0 +1,366 @@
+{
+  "tasks": [
+    {
+      "task_id": "TASK-01",
+      "title": "Stable Deduplication",
+      "category": "list_operations",
+      "difficulty": "Easy",
+      "description": "Write a function `stable_dedup(items)` that removes duplicate elements from a list while strictly preserving the insertion order of their first appearance.",
+      "input_spec": "A list of primitive items (integers or strings).",
+      "output_spec": "A list with duplicates removed in original first-seen order.",
+      "expected_trap": "Converting to `list(set(items))` loses original insertion order. Must track seen items using a set while preserving list sequence or use OrderedDict/dict.fromkeys.",
+      "test_cases": [
+        {
+          "name": "Mixed integers with duplicates",
+          "input_args": {"items": [3, 1, 2, 3, 2, 4]},
+          "expected_output": [3, 1, 2, 4],
+          "is_edge_case": false,
+          "description": "Standard list with multiple duplicates"
+        },
+        {
+          "name": "String sequence with duplicates",
+          "input_args": {"items": ["apple", "banana", "apple", "cherry"]},
+          "expected_output": ["apple", "banana", "cherry"],
+          "is_edge_case": false,
+          "description": "String elements deduplicated"
+        },
+        {
+          "name": "Already unique list",
+          "input_args": {"items": [10, 20, 30]},
+          "expected_output": [10, 20, 30],
+          "is_edge_case": false,
+          "description": "No duplicates present"
+        },
+        {
+          "name": "All identical elements",
+          "input_args": {"items": [5, 5, 5, 5]},
+          "expected_output": [5],
+          "is_edge_case": true,
+          "description": "Entire list collapses to single element"
+        },
+        {
+          "name": "Empty list boundary",
+          "input_args": {"items": []},
+          "expected_output": [],
+          "is_edge_case": true,
+          "description": "Empty input should return empty list"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-02",
+      "title": "Bracket Matcher with String Literals",
+      "category": "string_processing",
+      "difficulty": "Medium",
+      "description": "Write a function `is_bracket_balanced(s)` that determines if parentheses `()`, square brackets `[]`, and curly braces `{}` are properly matched and nested. Critical rule: Any brackets enclosed within double quotes `\"...\"` are treated as literal text and MUST be ignored during bracket balancing.",
+      "input_spec": "A string `s` containing characters, quotes, and brackets.",
+      "output_spec": "Boolean `True` if balanced, `False` otherwise.",
+      "expected_trap": "Standard stack bracket matchers fail to ignore brackets inside quotes, misinterpreting literal characters like '\"}\"' as closing tokens.",
+      "test_cases": [
+        {
+          "name": "Simple balanced brackets",
+          "input_args": {"s": "([{}])"},
+          "expected_output": true,
+          "is_edge_case": false,
+          "description": "Standard nested brackets"
+        },
+        {
+          "name": "Mismatched brackets",
+          "input_args": {"s": "(]"},
+          "expected_output": false,
+          "is_edge_case": false,
+          "description": "Direct mismatch"
+        },
+        {
+          "name": "Quoted opening bracket inside pair",
+          "input_args": {"s": "(\"(\")"},
+          "expected_output": true,
+          "is_edge_case": true,
+          "description": "Internal bracket is inside double quotes and ignored"
+        },
+        {
+          "name": "Quoted closing brace inside brackets",
+          "input_args": {"s": "[\"}\"]"},
+          "expected_output": true,
+          "is_edge_case": true,
+          "description": "Closing brace inside quotes must not prematurely close bracket"
+        },
+        {
+          "name": "Empty string boundary",
+          "input_args": {"s": ""},
+          "expected_output": true,
+          "is_edge_case": true,
+          "description": "Empty string is vacuously balanced"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-03",
+      "title": "Max Stock Profit with Cooldown",
+      "category": "numeric_calculation",
+      "difficulty": "Hard",
+      "description": "Write a function `max_profit_cooldown(prices)` finding the maximum profit you can achieve given an array where `prices[i]` is the stock price on day `i`. Rule: You may complete as many transactions as you like, but after you sell your stock, you cannot buy stock on the next day (i.e. cooldown 1 day).",
+      "input_spec": "A list of non-negative integer stock prices.",
+      "output_spec": "An integer representing the maximum profit achievable.",
+      "expected_trap": "Greedy buy-low-sell-high algorithms fail because selling immediately may trigger an undesirable cooldown that forfeits a larger profit on the next peak.",
+      "test_cases": [
+        {
+          "name": "Canonical DP case",
+          "input_args": {"prices": [1, 2, 3, 0, 2]},
+          "expected_output": 3,
+          "is_edge_case": false,
+          "description": "Buy at 1, sell at 3 (profit=2); cooldown; buy at 0, sell at 2 (profit=2) -> optimal total = 3"
+        },
+        {
+          "name": "Strictly declining prices",
+          "input_args": {"prices": [7, 6, 4, 3, 1]},
+          "expected_output": 0,
+          "is_edge_case": false,
+          "description": "No profitable transactions possible"
+        },
+        {
+          "name": "Monotonically increasing prices",
+          "input_args": {"prices": [1, 2, 4]},
+          "expected_output": 3,
+          "is_edge_case": false,
+          "description": "Buy at 1, sell at 4"
+        },
+        {
+          "name": "Single price point",
+          "input_args": {"prices": [10]},
+          "expected_output": 0,
+          "is_edge_case": true,
+          "description": "Cannot complete transaction with one price"
+        },
+        {
+          "name": "Empty price list",
+          "input_args": {"prices": []},
+          "expected_output": 0,
+          "is_edge_case": true,
+          "description": "Empty array profit is 0"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-04",
+      "title": "Deep Key Flattener with Null Preservation",
+      "category": "list_operations",
+      "difficulty": "Medium",
+      "description": "Write a function `flatten_dict(d, parent_key='', sep='.')` that flattens a nested dictionary. Keys should be concatenated with `sep`. Explicit `None` / `null` values must be preserved in the flattened dictionary rather than omitted.",
+      "input_spec": "A nested dictionary with string keys.",
+      "output_spec": "A flat dictionary mapping dotted key paths to leaf values.",
+      "expected_trap": "Using truthy checks like `if val:` unintentionally drops explicit `None`, `False`, or `0` values from the flattened output.",
+      "test_cases": [
+        {
+          "name": "Nested dictionary with None value",
+          "input_args": {"d": {"a": {"b": 1, "c": null}}},
+          "expected_output": {"a.b": 1, "a.c": null},
+          "is_edge_case": false,
+          "description": "Null leaf must be retained"
+        },
+        {
+          "name": "Falsy values preserved (False and 0)",
+          "input_args": {"d": {"flags": {"debug": false, "retries": 0}}},
+          "expected_output": {"flags.debug": false, "flags.retries": 0},
+          "is_edge_case": true,
+          "description": "False and 0 must not be treated as empty"
+        },
+        {
+          "name": "Already flat dictionary",
+          "input_args": {"d": {"status": "ok", "code": 200}},
+          "expected_output": {"status": "ok", "code": 200},
+          "is_edge_case": false,
+          "description": "No nesting present"
+        },
+        {
+          "name": "Empty dictionary input",
+          "input_args": {"d": {}},
+          "expected_output": {},
+          "is_edge_case": true,
+          "description": "Empty dict should yield empty dict"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-05",
+      "title": "Exact Currency Splitter without Penny Drift",
+      "category": "numeric_calculation",
+      "difficulty": "Medium",
+      "description": "Write a function `split_currency(total_cents, num_recipients)` that splits an integer number of cents among `num_recipients` as evenly as possible. The sum of the allocated parts MUST equal `total_cents` exactly. Any remainder cents are distributed one-by-one to the first recipients.",
+      "input_spec": "Integers `total_cents` (>= 0) and `num_recipients` (> 0).",
+      "output_spec": "A list of integers representing the cents assigned to each recipient in order.",
+      "expected_trap": "Floating-point division `total / num` loses fractional cents due to IEEE-754 precision issues or integer truncations that fail to allocate remainder cents.",
+      "test_cases": [
+        {
+          "name": "100 cents across 3 recipients",
+          "input_args": {"total_cents": 100, "num_recipients": 3},
+          "expected_output": [34, 33, 33],
+          "is_edge_case": false,
+          "description": "1 remainder cent given to first recipient"
+        },
+        {
+          "name": "10 cents across 4 recipients",
+          "input_args": {"total_cents": 10, "num_recipients": 4},
+          "expected_output": [3, 3, 2, 2],
+          "is_edge_case": false,
+          "description": "2 remainder cents given to first two recipients"
+        },
+        {
+          "name": "Even division with zero remainder",
+          "input_args": {"total_cents": 100, "num_recipients": 2},
+          "expected_output": [50, 50],
+          "is_edge_case": false,
+          "description": "Exact divide"
+        },
+        {
+          "name": "Zero total cents",
+          "input_args": {"total_cents": 0, "num_recipients": 3},
+          "expected_output": [0, 0, 0],
+          "is_edge_case": true,
+          "description": "Zero split returns zeros"
+        },
+        {
+          "name": "Fewer cents than recipients",
+          "input_args": {"total_cents": 2, "num_recipients": 5},
+          "expected_output": [1, 1, 0, 0, 0],
+          "is_edge_case": true,
+          "description": "Some recipients receive 0 cents"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-06",
+      "title": "Sliding Window Maximum",
+      "category": "boundary_cases",
+      "difficulty": "Medium",
+      "description": "Write a function `max_sliding_window(nums, k)` that returns the maximum value in each sliding window of size `k` moving from left to right across the list `nums`.",
+      "input_spec": "A list of integers `nums` and an integer window size `k` (1 <= k <= len(nums)).",
+      "output_spec": "A list of integers containing maximum values of each window.",
+      "expected_trap": "Off-by-one errors in window range boundaries, especially when k=1 or k equals the length of nums, or incorrect handling of all-negative sequences.",
+      "test_cases": [
+        {
+          "name": "Standard mixed list",
+          "input_args": {"nums": [1, 3, -1, -3, 5, 3, 6, 7], "k": 3},
+          "expected_output": [3, 3, 5, 5, 6, 7],
+          "is_edge_case": false,
+          "description": "Classic sliding window sequence"
+        },
+        {
+          "name": "Window size k = 1",
+          "input_args": {"nums": [4, -2], "k": 1},
+          "expected_output": [4, -2],
+          "is_edge_case": true,
+          "description": "k=1 should return the input list unchanged"
+        },
+        {
+          "name": "Window size k equals list length",
+          "input_args": {"nums": [9, 11], "k": 2},
+          "expected_output": [11],
+          "is_edge_case": true,
+          "description": "Single window spanning whole list"
+        },
+        {
+          "name": "All negative numbers",
+          "input_args": {"nums": [-7, -8, -7, -5], "k": 2},
+          "expected_output": [-7, -7, -5],
+          "is_edge_case": true,
+          "description": "Negative numbers must be compared correctly without zero default"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-07",
+      "title": "Strict Roman Numeral Validator and Parser",
+      "category": "boundary_cases",
+      "difficulty": "Hard",
+      "description": "Write a function `parse_roman_strict(s)` that converts a valid Roman numeral string `s` into an integer (1 to 3999). CRITICAL: If the string is invalid Roman notation (e.g. invalid repetitions like 'IIII', 'VV', illegal subtractive pairs like 'IC' or 'IL', or incorrect ordering), return -1.",
+      "input_spec": "A string `s` representing a putative Roman numeral.",
+      "output_spec": "Integer value if strictly valid, or -1 if invalid notation.",
+      "expected_trap": "Standard additive-subtractive algorithms blindly calculate 4 for 'IIII' or 99 for 'IC' instead of enforcing Roman grammar constraints (re-encoding canonical check).",
+      "test_cases": [
+        {
+          "name": "Valid complex subtractive numeral",
+          "input_args": {"s": "MCMXCIV"},
+          "expected_output": 1994,
+          "is_edge_case": false,
+          "description": "1000 + 900 + 90 + 4"
+        },
+        {
+          "name": "Valid additive numeral",
+          "input_args": {"s": "LVIII"},
+          "expected_output": 58,
+          "is_edge_case": false,
+          "description": "50 + 5 + 3"
+        },
+        {
+          "name": "Invalid repetition 'IIII'",
+          "input_args": {"s": "IIII"},
+          "expected_output": -1,
+          "is_edge_case": true,
+          "description": "More than 3 identical additive characters is invalid"
+        },
+        {
+          "name": "Invalid subtractive pair 'IC'",
+          "input_args": {"s": "IC"},
+          "expected_output": -1,
+          "is_edge_case": true,
+          "description": "I can only precede V and X, not C"
+        },
+        {
+          "name": "Invalid repeat of non-repeatable symbol 'VV'",
+          "input_args": {"s": "VV"},
+          "expected_output": -1,
+          "is_edge_case": true,
+          "description": "V, L, D cannot be repeated"
+        }
+      ]
+    },
+    {
+      "task_id": "TASK-08",
+      "title": "Run-Length Encoding with Single-Char Guard",
+      "category": "string_processing",
+      "difficulty": "Easy",
+      "description": "Write a function `run_length_encode(text)` that encodes consecutive identical characters as `<char><count>` ONLY when count >= 2. Single characters must remain without a count (e.g., 'A', NOT 'A1').",
+      "input_spec": "A string `text` of characters.",
+      "output_spec": "A compressed string.",
+      "expected_trap": "Naive run-length encoding appends '1' to single characters, transforming 'ABC' into 'A1B1C1' which expands rather than compresses the text.",
+      "test_cases": [
+        {
+          "name": "Mixed repeating characters",
+          "input_args": {"text": "AABBBCCCC"},
+          "expected_output": "A2B3C4",
+          "is_edge_case": false,
+          "description": "All runs >= 2"
+        },
+        {
+          "name": "All unique characters without runs",
+          "input_args": {"text": "ABC"},
+          "expected_output": "ABC",
+          "is_edge_case": true,
+          "description": "Single characters must NOT have '1' appended"
+        },
+        {
+          "name": "Alternating singles and long runs",
+          "input_args": {"text": "WWWWWWWWWWWWBWWWWWWWWWWWWBBB"},
+          "expected_output": "W12BW12B3",
+          "is_edge_case": false,
+          "description": "Long runs with single 'B' in middle"
+        },
+        {
+          "name": "Empty string boundary",
+          "input_args": {"text": ""},
+          "expected_output": "",
+          "is_edge_case": true,
+          "description": "Empty string should return empty string"
+        },
+        {
+          "name": "Single character string",
+          "input_args": {"text": "Z"},
+          "expected_output": "Z",
+          "is_edge_case": true,
+          "description": "Single char string should remain unchanged"
+        }
+      ]
+    }
+  ]
+}
